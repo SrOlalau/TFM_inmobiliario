@@ -1,0 +1,16 @@
+# Ignorar la carpeta de datos
+data/
+
+# Ignorar archivos de entorno virtual
+.venv/
+
+# Ignorar archivos compilados de Python
+*.pyc
+__pycache__/
+
+# Ignorar archivos de configuración de IDE
+.idea/
+.vscode/
+
+# Ignorar archivos de sistema
+.DS_Store
