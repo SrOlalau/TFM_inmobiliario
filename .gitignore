@@ -1,6 +1,3 @@
-# Ignorar la carpeta de datos
-data/
-
 # Ignorar archivos de entorno virtual
 .venv/
 
