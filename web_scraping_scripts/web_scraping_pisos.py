@@ -145,6 +145,12 @@ def main():
 
     for tipo in TIPOS:
         for comunidad in CCAA:
+            filename = f'downloaded_data_{tipo}_{comunidad}_{today.year}{today.month:02d}{today.day:02d}.csv'
+            filepath = os.path.join(raw_data_path, filename)
+            if os.path.exists(filepath):
+                print(f'El archivo {filename} ya existe. Pasando al siguiente archivo.')
+                continue
+
             print(f'--------- {tipo.upper()} - {comunidad} ---------')
             soup = hace_busqueda(tipo=tipo, ccaa=comunidad)
             n_pag = num_paginas(soup)
@@ -170,7 +176,6 @@ def main():
             data_df.drop_duplicates(inplace=True)
             data_df['CCAA'] = comunidad
             # Modificar la línea de guardado de archivos para usar raw_data_path
-            filename = f'downloaded_data_{tipo}_{comunidad}_{today.year}{today.month:02d}{today.day:02d}.csv'
             data_df.to_csv(os.path.join(raw_data_path, filename), encoding='utf-8', index=False, sep=';')
 
 
