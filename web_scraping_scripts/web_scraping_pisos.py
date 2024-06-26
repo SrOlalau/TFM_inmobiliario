@@ -123,9 +123,11 @@ def get_all_relevant(anunc):
     return to_save
 
 
-def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid'):   
+def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid', ultimasemana=False):
     base_url = f'https://www.pisos.com/{tipo}/pisos-{ccaa}/'
-    
+    if ultimasemana:
+        base_url += 'ultimasemana/'
+
     url = base_url.format(tipo=tipo, ciudad=ccaa)
     if num_search:
         response = requests.get(url + str(num_search))
@@ -136,7 +138,7 @@ def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid'):
 
 
 # Hace las busquedas de ventas y alquileres en madrid
-def main():
+def main(ultimasemana =True):
     TIPOS = ['alquiler', 'venta']
     CCAA = [
         'madrid', 'barcelona', 'valencia', 'granada',
@@ -152,7 +154,7 @@ def main():
                 continue
 
             print(f'--------- {tipo.upper()} - {comunidad} ---------')
-            soup = hace_busqueda(tipo=tipo, ccaa=comunidad)
+            soup = hace_busqueda(tipo=tipo, ccaa=comunidad, ultimasemana=ultimasemana)
             n_pag = num_paginas(soup)
 
             data = []
