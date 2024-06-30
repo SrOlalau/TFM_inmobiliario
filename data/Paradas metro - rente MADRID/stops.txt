@@ -1,0 +1,97 @@
+﻿stop_id,stop_code,stop_name,stop_desc,stop_lat,stop_lon,zone_id,stop_url,location_type,parent_station,stop_timezone,wheelchair_boarding
+par_10_1,1,PINAR DE CHAMARTIN,Calle de Arturo Soria 330,40.48014,-3.66684,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_1_721,1,Arturo Soria,Calle de Arturo Soria 330,40.48023,-3.66684,,http://www.crtm.es,2,est_10_1,,0
+acc_10_1_722,1,Ascensor,Calle de Arturo Soria 330,40.48015,-3.66694,,http://www.crtm.es,2,est_10_1,,0
+par_10_2,2,FUENTE DE LA MORA,Calle de Dulce Chacón 15,40.48482,-3.66325,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_2_723,2,Avda. Fuente de la Mora,Cmno de la Fuente de la Mora 6,40.48561,-3.66318,,http://www.crtm.es,2,est_10_2,,0
+acc_10_2_724,2,Ascensor,Cmno de la Fuente de la Mora 6,40.48566,-3.66302,,http://www.crtm.es,2,est_10_2,,0
+acc_10_2_725,2,Camino Fuente de la Mora,Calle de Dulce Chacón 15,40.48461,-3.66308,,http://www.crtm.es,2,est_10_2,,0
+acc_10_2_726,2,Ascensor,Calle de Dulce Chacón 15,40.48461,-3.66302,,http://www.crtm.es,2,est_10_2,,0
+par_10_3,3,VIRGEN DEL CORTIJO,Avda de Manoteras 54,40.48734,-3.66098,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_3_727,3,Avda. Manoteras,Avda de Manoteras 49,40.4874,-3.66105,,http://www.crtm.es,2,est_10_3,,0
+acc_10_3_728,3,Ascensor,Avda de Manoteras 49,40.48742,-3.66116,,http://www.crtm.es,2,est_10_3,,0
+par_10_4,4,ANTONIO SAURA,Calle del Príncipe Carlos 10,40.48546,-3.65353,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_4_732,4,Príncipe Carlos,Calle del Príncipe Carlos 10,40.48552,-3.6535,,http://www.crtm.es,2,est_10_4,,0
+par_10_5,5,ALVAREZ DE VILLAAMIL,Calle del Príncipe Carlos 13 B,40.48905,-3.65136,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_5_733,5,Príncipe Carlos,Calle del Príncipe Carlos 13 B,40.48903,-3.65126,,http://www.crtm.es,2,est_10_5,,0
+par_10_6,6,BLASCO IBAÑEZ,Calle del Príncipe Carlos 50,40.49368,-3.65584,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_6_719,6,Príncipe Carlos,Calle del Príncipe Carlos 48,40.49354,-3.65563,,http://www.crtm.es,2,est_10_6,,0
+acc_10_6_720,6,Ascensor,Calle del Príncipe Carlos 48,40.49357,-3.6557,,http://www.crtm.es,2,est_10_6,,0
+par_10_7,7,MARIA TUDOR,Calle de María Tudor 15,40.49717,-3.65889,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_7_729,7,María Tudor,Calle de María Tudor 15,40.49701,-3.65907,,http://www.crtm.es,2,est_10_7,,0
+acc_10_7_730,7,Ascensor,Calle de María Tudor 15,40.49708,-3.65905,,http://www.crtm.es,2,est_10_7,,0
+acc_10_7_731,7,Catalina de Austria,Calle de María Tudor 15,40.49779,-3.6582,,http://www.crtm.es,2,est_10_7,,0
+par_10_8,8,PALAS DE REY,Calle de Palas de Rey 18 A,40.50544,-3.66507,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_8_734,8,Palas de Rey,Calle de Palas de Rey SN,40.50546,-3.66501,,http://www.crtm.es,2,est_10_8,,0
+par_10_9,9,LAS TABLAS,Calle de Palas de Rey 30,40.50824,-3.66932,A,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_9_735,9,Palas de Rey,Calle de Palas de Rey SN,40.50808,-3.66884,,http://www.crtm.es,2,est_10_9,,0
+est_10_1,1,PINAR DE CHAMARTIN,Calle de Arturo Soria 330,40.48014,-3.66684,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_2,2,FUENTE DE LA MORA,Calle de Dulce Chacón 15,40.48482,-3.66325,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_3,3,VIRGEN DEL CORTIJO,Avda de Manoteras 54,40.48734,-3.66098,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_4,4,ANTONIO SAURA,Calle del Príncipe Carlos 10,40.48546,-3.65353,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_5,5,ALVAREZ DE VILLAAMIL,Calle del Príncipe Carlos 13 B,40.48905,-3.65136,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_6,6,BLASCO IBAÑEZ,Calle del Príncipe Carlos 50,40.49368,-3.65584,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_7,7,MARIA TUDOR,Calle de María Tudor 15,40.49717,-3.65889,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_8,8,PALAS DE REY,Calle de Palas de Rey 18 A,40.50544,-3.66507,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_9,9,LAS TABLAS,Calle de Palas de Rey 30,40.50824,-3.66932,A,http://www.crtm.es,1,,Europe/Madrid,2
+par_10_10,10,COLONIA JARDIN,Calle de Arenas de San Pedro 2,40.39698,-3.77456,A,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_11,11,PRADO DE LA VEGA,Ctra   M-502 (Carabanchel) 1200,40.4023,-3.78121,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_12,12,COLONIA DE LOS ANGELES,Ctra   M-502 (Carabanchel) 1900,40.40721,-3.7844,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_13,13,PRADO DEL REY,Avda   Radio y Televisión 4,40.41047,-3.78748,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_14,14,SOMOSAGUAS SUR,Calle   Veritas 4,40.41536,-3.79252,B1,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_14_808,14,Somosaguas Sur,Calle  Veritas 1,40.41499,-3.79262,,http://www.crtm.es,2,est_10_14,,0
+acc_10_14_809,14,Ascensor,Calle  Veritas 1,40.41567,-3.79264,,http://www.crtm.es,2,est_10_14,,0
+par_10_15,15,SOMOSAGUAS CENTRO,Ctra   Carabanchel (M-502) 36,40.41937,-3.79874,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_16,16,POZUELO OESTE,Ctra   Carabanchel (M-502) 63,40.42307,-3.80447,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_18,18,BELGICA,Via de las Dos Castillas 5,40.43058,-3.80755,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_19,19,DOS CASTILLAS,Via de las Dos Castillas 11 D,40.43253,-3.80162,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_20,20,CAMPUS DE SOMOSAGUAS,Avda del Cerro SN,40.43338,-3.79525,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_21,21,AVENIDA DE EUROPA,Avda   Comunidad de Madrid 3,40.43931,-3.79305,B1,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_21_810,21,Avenida de Europa,Avda  Comunidad de Madrid 3,40.43914,-3.79309,,http://www.crtm.es,2,est_10_21,,0
+acc_10_21_811,21,Ascensor,Avda  Comunidad de Madrid 3,40.43953,-3.79301,,http://www.crtm.es,2,est_10_21,,0
+par_10_22,22,BERNA,Calle   Plutón 1,40.44487,-3.7912,B1,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_22_812,22,Berna,Calle  Plutón 1,40.44476,-3.79116,,http://www.crtm.es,2,est_10_22,,0
+acc_10_22_813,22,Ascensor,Calle  Plutón 1,40.4446,-3.79116,,http://www.crtm.es,2,est_10_22,,0
+par_10_23,23,ESTACION DE ARAVACA,Calle de la Golondrina 104,40.44833,-3.78591,A,http://www.crtm.es,0,,Europe/Madrid,2
+est_10_10,10,COLONIA JARDIN,Calle de Arenas de San Pedro 2,40.39698,-3.77456,A,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_14,14,SOMOSAGUAS SUR,Calle   Veritas 4,40.41536,-3.79252,B1,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_21,21,AVENIDA DE EUROPA,Avda   Comunidad de Madrid 3,40.43931,-3.79305,B1,http://www.crtm.es,1,,Europe/Madrid,2
+est_10_22,22,BERNA,Calle   Plutón 1,40.44487,-3.7912,B1,http://www.crtm.es,1,,Europe/Madrid,2
+par_10_24,24,COLONIA JARDIN,Calle de Arenas de San Pedro 2,40.39698,-3.77451,A,http://www.crtm.es,0,est_10_10,,2
+par_10_25,25,CIUDAD DE LA IMAGEN,Calle   Juan de Orduña 4,40.39709,-3.78399,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_26,26,JOSE ISBERT,Calle   José Isbert 2,40.39525,-3.78993,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_27,27,CIUDAD DEL CINE,Calle   José Isbert 20,40.39455,-3.79557,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_28,28,RETAMARES,Ctra   Boadilla-Carabanchel (M-511) SN,40.39872,-3.81675,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_29,29,MONTEPRINCIPE,Avda del Montepríncipe 1,40.39792,-3.8358,B1,http://www.crtm.es,0,,Europe/Madrid,2
+acc_10_29_738,29,Ascensor,Avda del Montepríncipe 1,40.39777,-3.83592,,http://www.crtm.es,2,est_10_29,,0
+acc_10_29_739,29,Montepríncipe,Avda del Montepríncipe 1,40.39787,-3.83582,,http://www.crtm.es,2,est_10_29,,0
+par_10_30,30,VENTORRO DEL CANO,Avda del Tranvía SN,40.3942,-3.83811,B1,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_31,31,PRADO DEL ESPINO,Calle   Labradores 1,40.39502,-3.84774,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_32,32,CANTABRIA,Avda de Cantabria 3,40.39529,-3.86439,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_33,33,FERIAL DE BOADILLA,Ctra de Boadilla-Villaviciosa 13 A,40.40196,-3.87938,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_34,34,BOADILLA CENTRO,Ctra de Boadilla-Majadahonda 40,40.40714,-3.88004,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_35,35,NUEVO MUNDO,Avda del Nuevo Mundo 6 B,40.40564,-3.88576,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_36,36,SIGLO XXI,Avda del Siglo XXI 1,40.40513,-3.89263,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_37,37,INFANTE DON LUIS,Avda del Siglo XXI 11,40.40595,-3.89741,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_38,38,PUERTA DE BOADILLA,Avda   Siglo XXI SN,40.40777,-3.90378,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_39,39,COCHERAS,Ctra de Boadilla del Monte 90,40.39688,-3.80386,B1,http://www.crtm.es,0,,Europe/Madrid,2
+est_10_29,29,MONTEPRINCIPE,Avda del Montepríncipe 1,40.39792,-3.8358,B1,http://www.crtm.es,1,,Europe/Madrid,2
+par_10_50,50,PLAZA DE TOROS,Ctra   M-408 (Parla a Pinto) 1600,40.2441,-3.75756,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_51,51,JULIO ROMERO DE TORRES,Calle   Julio Romero de Torres 2,40.24535,-3.76232,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_52,52,LA BALLENA,Calle   Real 94,40.24599,-3.76635,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_53,53,PARLA CENTRO - BULEVAR NORTE,Calle  Real 81,40.24079,-3.76954,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_54,54,IGLESIA CENTRO,Calle   Real 28,40.23771,-3.77059,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_55,55,BULEVAR SUR,Calle   San Antón 4,40.23473,-3.77236,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_56,56,REYES CATOLICOS,Calle   Reyes Católicos 37,40.23141,-3.77,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_57,57,ISABEL II,Calle   Reyes Católicos 12,40.23114,-3.76508,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_58,58,PARQUE PARLA ESTE,Avda del Sistema Solar 5,40.22816,-3.76147,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_59,59,AVENIDA SISTEMA SOLAR,Avda del Sistema Solar 9,40.22343,-3.76072,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_60,60,TIERRA NORTE,Avda de las Estrellas 34,40.22195,-3.75406,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_61,61,TIERRA SUR,Avda de los Planetas 31,40.22254,-3.75675,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_62,62,VENUS NORTE,Avda de las Estrellas 49,40.22627,-3.75251,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_63,63,VENUS SUR,Avda de los Planetas 32,40.22683,-3.75522,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_64,64,ESTRELLA POLAR NORTE,Avda de las Estrellas 14,40.23015,-3.75112,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_65,65,ESTRELLA POLAR SUR,Avda de los Planetas 9,40.23072,-3.75383,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_66,66,JAIME I NORTE,Avda de las Estrellas 2,40.23414,-3.74969,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_67,67,JAIME I SUR,Avda de los Planetas 6,40.2347,-3.7524,B2,http://www.crtm.es,0,,Europe/Madrid,2
+par_10_68,68,POLIGONO INDUSTRIAL CIUDAD DE PARLA,Calle   Berlín 61,40.23867,-3.75045,B2,http://www.crtm.es,0,,Europe/Madrid,2
