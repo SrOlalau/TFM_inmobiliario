@@ -1,12 +1,19 @@
+import math
 import os
+import random
+import time
+from datetime import date
+
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import re
-import math
-import time
-from datetime import date
-import random
+
+from web_scraping_scripts.fake_user_agents_list import get_random_headers
+
+# Constantes
+MAX_PAGES = 100  # Número máximo de páginas que se puede iterar
+RESULTS_PER_PAGE = 25  # Resultados que salen por página
+
 
 # Creación de directorios
 def crear_directorios(base_path):
@@ -25,15 +32,17 @@ raw_data_path = crear_directorios(base_path)
 today = date.today()
 print("Today's date is: ", today)
 
+
 # Calcula el número de páginas para iterar
 def num_paginas(soup):
     results_counter = soup.find('div', class_='results-counter js-results-counter')
     if results_counter:
         total_count_text = results_counter.find('span', {'data-test': 'results'}).text
         total_count = int(total_count_text.replace('.', ''))
-        n_paginas = math.ceil(total_count / 25)  # Asumiendo que hay 25 resultados por página
-        return min(n_paginas, 100)  # Limitar el número máximo de páginas a 100
+        n_paginas = math.ceil(total_count / RESULTS_PER_PAGE)
+        return min(n_paginas, MAX_PAGES)
     return None
+
 
 def extract_property_info(snippet):
     property_info = {}
@@ -87,31 +96,47 @@ def extract_property_info(snippet):
 
     return property_info
 
+
 def get_all_relevant(anunc):
     snippet = anunc.find('div', class_='snippet-content')
     to_save = extract_property_info(snippet)
     return to_save
 
+
 def hace_busqueda(num_search=None, url=None):
     if num_search:
         url = url.rstrip('/') + '/' + str(num_search)
-    response = requests.get(url)
+    response = requests.get(url, headers=get_random_headers(), timeout=20)
     soup = BeautifulSoup(response.text, 'html.parser')
     return soup
 
+
+def generate_urls(provincias):
+    base_url = "https://casas.trovit.es"
+    urls = []
+
+    # Lista de provincias bajo nombre comunidad
+    comunidad = ["Madrid"]
+
+    for provincia in provincias:
+        # Determinar si debemos agregar "-provincia" al final
+        suffix = "-comunidad" if provincia in comunidad else "-provincia"
+
+        alquiler_url = f"{base_url}/alquiler-{provincia.lower().replace(' ', '-')}{suffix}"
+        venta_url = f"{base_url}/{provincia.lower().replace(' ', '-')}{suffix}-piso"
+
+        urls.extend([
+            (alquiler_url, "alquiler", provincia),
+            (venta_url, "venta", provincia)
+        ])
+    return urls
+
+
+
 def main():
-    URLS = [
-        ('https://casas.trovit.es/alquiler-barcelona-provincia', 'alquiler', 'barcelona'),
-        ('https://casas.trovit.es/alquiler-val%C3%A8ncia', 'alquiler', 'valencia'),
-        ('https://casas.trovit.es/alquiler-santander', 'alquiler', 'santander'),
-        ('https://casas.trovit.es/alquiler-alicante-provincia', 'alquiler', 'alicante'),
-        ('https://casas.trovit.es/comunidad-madrid-piso', 'venta', 'madrid'),
-        ('https://casas.trovit.es/piso-sevilla', 'venta', 'sevilla'),
-        ('https://casas.trovit.es/piso-provincia-bizkaia', 'venta', 'bizkaia'),
-        ('https://casas.trovit.es/alquiler-bilbao', 'alquiler', 'bilbao'),
-        ('https://casas.trovit.es/provincia-m%C3%A1laga', 'venta', 'malaga'),
-        ('https://casas.trovit.es/comunidad-madrid', 'venta', 'madrid'),
-    ]
+    provincias = ["Barcelona", "Valencia", "Cantabria", "Alicante",
+                  "Madrid", "Sevilla", "Bizkaia", "Malaga", "Granada"]
+    URLS = generate_urls(provincias)
 
     for url, tipo, comunidad in URLS:
         filename = f'downloaded_trovit_data_{tipo}_{comunidad}_{today.year}{today.month:02d}{today.day:02d}.csv'
@@ -121,6 +146,7 @@ def main():
             continue
 
         print(f'--------- {tipo.upper()} - {comunidad} ---------')
+        print(url)
         soup = hace_busqueda(url=url)
         n_pag = num_paginas(soup)
 
@@ -139,12 +165,15 @@ def main():
                 to_save = get_all_relevant(anunc)
                 if to_save:
                     data.append(to_save)
-            time.sleep(random.uniform(1.1, 3.5))
+            time.sleep(random.uniform(1.1, 3.8))
 
         data_df = pd.DataFrame(data)
         data_df.drop_duplicates(inplace=True)
         data_df['CCAA'] = comunidad
         data_df.to_csv(os.path.join(raw_data_path, filename), encoding='utf-8', index=False, sep=';')
+
+        # Espera tiempo adicional para seguir con siguiente provincia
+        time.sleep(random.uniform(20, 30))
 
 if __name__ == '__main__':
     main()

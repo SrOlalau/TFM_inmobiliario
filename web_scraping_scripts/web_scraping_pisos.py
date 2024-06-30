@@ -4,19 +4,21 @@ Created on Mon Jun  5 11:57:51 2023
 
 @author: avg
 """
+import html
+import json
+import math
 import os
+import random
+import re
+import time
+from datetime import date
+from json.decoder import JSONDecodeError
+
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-import re
-import json
-from json.decoder import JSONDecodeError
-import math
-import time
-from datetime import date
-import random
-import html
 
+from web_scraping_scripts.fake_user_agents_list import get_random_headers
 
 
 # Creación de directorios
@@ -130,9 +132,9 @@ def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid', ultimasemana=
 
     url = base_url.format(tipo=tipo, ciudad=ccaa)
     if num_search:
-        response = requests.get(url + str(num_search))
+        response = requests.get(url + str(num_search), headers=get_random_headers(), timeout=20)
     else:
-        response = requests.get(url)
+        response = requests.get(url, headers=get_random_headers(), timeout=20)
     soup = BeautifulSoup(response.text, 'html.parser')
     return soup
 
@@ -177,9 +179,10 @@ def main(ultimasemana =True):
             data_df = pd.DataFrame(data)
             data_df.drop_duplicates(inplace=True)
             data_df['CCAA'] = comunidad
-            # Modificar la línea de guardado de archivos para usar raw_data_path
             data_df.to_csv(os.path.join(raw_data_path, filename), encoding='utf-8', index=False, sep=';')
 
+            # Espera tiempo adicional para seguir con siguiente CCAA
+            time.sleep(random.uniform(2, 15))
 
 if __name__ == '__main__':
     main()
