@@ -136,6 +136,7 @@ def generate_urls(provincias):
 def main():
     provincias = ["Barcelona", "Valencia", "Cantabria", "Alicante",
                   "Madrid", "Sevilla", "Bizkaia", "Malaga", "Granada"]
+    random.shuffle(provincias)
     URLS = generate_urls(provincias)
 
     for url, tipo, comunidad in URLS:
@@ -150,12 +151,16 @@ def main():
         soup = hace_busqueda(url=url)
         n_pag = num_paginas(soup)
 
+        # Generar lista de números de páginas y mezclarla
+        paginas = list(range(1, n_pag + 1))
+        random.shuffle(paginas)
+
         data = []
-        for i in range(1, n_pag + 1):
+        for idx, i in enumerate(paginas):
             anuncios = None
             while anuncios is None:
                 try:
-                    print(f'Buscando página {i}/{n_pag}')
+                    print(f'Buscando página {idx + 1}/{n_pag}')
                     soup = hace_busqueda(num_search=i, url=url)
                     anuncios = soup.find_all('div', class_='snippet-wrapper')
                 except AttributeError:
@@ -165,15 +170,20 @@ def main():
                 to_save = get_all_relevant(anunc)
                 if to_save:
                     data.append(to_save)
-            time.sleep(random.uniform(1.1, 3.8))
+            time.sleep(random.uniform(1.3, 4.3))
+
+            # A la mitad de las 100 request, espera 1,25 minutos promedio para evitar captcha
+            if (idx + 1) % 20 == 0:
+                time.sleep(random.uniform(500, 840))
 
         data_df = pd.DataFrame(data)
+        print(f'Downloaded {len(data_df)} obs. for {comunidad} - {tipo}')
         data_df.drop_duplicates(inplace=True)
         data_df['CCAA'] = comunidad
         data_df.to_csv(os.path.join(raw_data_path, filename), encoding='utf-8', index=False, sep=';')
-
+        print(f'Saving {len(data_df)} obs. after drop duplicates')
         # Espera tiempo adicional para seguir con siguiente provincia
-        time.sleep(random.uniform(20, 30))
+        time.sleep(random.uniform(10, 20))
 
 if __name__ == '__main__':
     main()

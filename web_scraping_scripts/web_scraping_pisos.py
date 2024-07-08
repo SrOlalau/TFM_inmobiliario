@@ -42,10 +42,13 @@ print("Today date is: ", today)
 # Calcula el número de páginas para iterar
 def num_paginas(soup):    
     n_resultados = soup.find(class_ = 'grid__title')
-    if n_resultados.text:
-        n_resultados = int(re.findall(r'\d+', n_resultados.text.replace('.', ''))[0])
-        n_paginas = math.ceil(n_resultados/30)
-    return n_paginas if n_paginas else None
+    if n_resultados and n_resultados.text:
+        resultados = re.findall(r'\d+', n_resultados.text.replace('.', ''))
+        if resultados:
+            n_resultados = int(resultados[0])
+            n_paginas = math.ceil(n_resultados / 30)
+            return n_paginas if n_paginas else None
+    return 0  # Si no hay resultados, devuelve 0 páginas
 
 
 def extract_property_info(cuadro_info):
@@ -131,12 +134,20 @@ def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid', ultimasemana=
         base_url += 'ultimasemana/'
 
     url = base_url.format(tipo=tipo, ciudad=ccaa)
-    if num_search:
-        response = requests.get(url + str(num_search), headers=get_random_headers(), timeout=20)
-    else:
-        response = requests.get(url, headers=get_random_headers(), timeout=20)
-    soup = BeautifulSoup(response.text, 'html.parser')
-    return soup
+    while True:
+        try:
+            if num_search:
+                response = requests.get(url + str(num_search), headers=get_random_headers(), timeout=20)
+            else:
+                response = requests.get(url, headers=get_random_headers(), timeout=20)
+            soup = BeautifulSoup(response.text, 'html.parser')
+            return soup
+        except requests.exceptions.ConnectionError:
+            print("Connection error. Waiting for a while before retrying...")
+            time.sleep(random.uniform(10, 30))
+        except requests.exceptions.ReadTimeout:
+            print("Read timeout error. Waiting for a while before retrying...")
+            time.sleep(random.uniform(10, 30))
 
 
 # Hace las busquedas de ventas y alquileres en madrid
@@ -146,6 +157,7 @@ def main(ultimasemana =True):
         'madrid', 'barcelona', 'valencia', 'granada',
         'malaga', 'sevilla', 'cadiz', 'cantabria', 'vizcaya_bizkaia'
     ]
+    random.shuffle(CCAA)
 
     for tipo in TIPOS:
         for comunidad in CCAA:
@@ -159,12 +171,20 @@ def main(ultimasemana =True):
             soup = hace_busqueda(tipo=tipo, ccaa=comunidad, ultimasemana=ultimasemana)
             n_pag = num_paginas(soup)
 
+            if n_pag == 0:
+                print(f"Sin Datos para {tipo} en {comunidad}")
+                continue
+
+            # Generar lista de números de páginas y mezclarla
+            paginas = list(range(1, n_pag + 1))
+            random.shuffle(paginas)
+
             data = []
-            for i in range(1, n_pag + 1):
+            for idx, i in enumerate(paginas):
                 anuncios = None
                 while anuncios is None:
                     try:
-                        print(f'Buscando página {i}/{n_pag}')
+                        print(f'Buscando página {idx + 1}/{n_pag}')
                         soup = hace_busqueda(num_search=i, tipo=tipo, ccaa=comunidad)
                         anuncios = soup.find(class_='grid').find_all(class_='ad-preview')
                     except AttributeError:
@@ -186,3 +206,4 @@ def main(ultimasemana =True):
 
 if __name__ == '__main__':
     main()
+    time.sleep(random.uniform(30, 60))
