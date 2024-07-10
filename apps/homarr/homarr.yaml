@@ -1,9 +1,19 @@
+---
+# Definición del namespace específico para Homarr
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: homarr
+  labels:
+    parent: apps  # Etiqueta que indica que pertenece al namespace general "apps"
+
+---
 # Configuración del Deployment de Homarr
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: homarr-deployment
-  namespace: Apps
+  namespace: homarr  # Cambiado de "Apps" a "homarr"
 spec:
   replicas: 1
   selector:
@@ -41,13 +51,14 @@ spec:
       - name: homarr-data
         hostPath:
           path: /mnt/data/homarr/data
+
 ---
 # Configuración del Servicio para Homarr
 apiVersion: v1
 kind: Service
 metadata:
   name: homarr-service
-  namespace: Apps
+  namespace: homarr  # Cambiado de "Apps" a "homarr"
 spec:
   selector:
     app: homarr
