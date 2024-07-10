@@ -1,0 +1,59 @@
+# Configuración del Deployment de Homarr
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: homarr-deployment
+  namespace: Apps
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: homarr
+  template:
+    metadata:
+      labels:
+        app: homarr
+    spec:
+      containers:
+      - name: homarr
+        image: ghcr.io/ajnart/homarr:latest
+        ports:
+        - containerPort: 7575
+        volumeMounts:
+        - name: docker-sock
+          mountPath: /var/run/docker.sock
+        - name: homarr-configs
+          mountPath: /app/data/configs
+        - name: homarr-icons
+          mountPath: /app/public/icons
+        - name: homarr-data
+          mountPath: /data
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+      - name: homarr-configs
+        hostPath:
+          path: /mnt/data/homarr/configs
+      - name: homarr-icons
+        hostPath:
+          path: /mnt/data/homarr/icons
+      - name: homarr-data
+        hostPath:
+          path: /mnt/data/homarr/data
+---
+# Configuración del Servicio para Homarr
+apiVersion: v1
+kind: Service
+metadata:
+  name: homarr-service
+  namespace: Apps
+spec:
+  selector:
+    app: homarr
+  ports:
+    - protocol: TCP
+      port: 7575
+      targetPort: 7575
+      nodePort: 30179  # Puerto fijo en el nodo
+  type: NodePort
