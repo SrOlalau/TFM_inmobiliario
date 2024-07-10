@@ -3,14 +3,17 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: apps
+  name: homarr
+  labels:
+    parent: apps  # Etiqueta que indica que pertenece al namespace general "apps"
+
 ---
 # Configuración del Deployment de Homarr
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: homarr
-  namespace: apps  # Cambiado de "Apps" a "homarr"
+  name: homarr-deployment
+  namespace: homarr  # Cambiado de "Apps" a "homarr"
 spec:
   replicas: 1
   selector:
@@ -54,8 +57,8 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: homarr
-  namespace: apps  # Cambiado de "Apps" a "homarr"
+  name: homarr-service
+  namespace: homarr  # Cambiado de "Apps" a "homarr"
 spec:
   selector:
     app: homarr
