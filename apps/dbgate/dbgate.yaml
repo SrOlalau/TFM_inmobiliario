@@ -14,7 +14,7 @@ metadata:
   name: dbgate-deployment
   namespace: dbgate
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: dbgate
