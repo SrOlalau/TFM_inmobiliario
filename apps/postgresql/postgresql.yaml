@@ -28,7 +28,7 @@ data:
   POSTGRES_PASSWORD: c2NyYXBpbmc=  # 'scraping' codificado en base64
 ---
 # Deployment
-apiVersion: v1
+apiVersion: apps/v1  # Corregido de v1 a apps/v1
 kind: Deployment
 metadata:
   name: postgres-deployment
@@ -56,7 +56,6 @@ spec:
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
-          # Eliminamos el subPath para permitir que PostgreSQL cree sus propios subdirectorios
       volumes:
       - name: postgres-storage
         hostPath:
