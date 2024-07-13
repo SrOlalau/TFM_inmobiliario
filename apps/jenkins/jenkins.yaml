@@ -1,0 +1,113 @@
+---
+# Definición del namespace específico para Jenkins
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: jenkins
+  labels:
+    parent: apps
+---
+# ConfigMap para almacenar configuraciones
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: jenkins-config
+  namespace: jenkins
+data:
+  JENKINS_OPTS: "--prefix=/jenkins"
+  JENKINS_USER: "olalau"
+---
+# Secret para almacenar la contraseña del admin
+apiVersion: v1
+kind: Secret
+metadata:
+  name: jenkins-secret
+  namespace: jenkins
+type: Opaque
+data:
+  JENKINS_ADMIN_PASSWORD: b2xhbGF1  # 'olalau' codificado en base64
+---
+# ServiceAccount y RBAC para Jenkins
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: jenkins
+  namespace: jenkins
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: jenkins-admin
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: jenkins
+  namespace: jenkins
+---
+# Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-deployment
+  namespace: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      serviceAccountName: jenkins
+      containers:
+      - name: jenkins
+        image: jenkins/jenkins:lts
+        ports:
+        - containerPort: 8080
+        - containerPort: 50000
+        env:
+        - name: JENKINS_ADMIN_ID
+          valueFrom:
+            configMapKeyRef:
+              name: jenkins-config
+              key: JENKINS_USER
+        - name: JENKINS_ADMIN_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: jenkins-secret
+              key: JENKINS_ADMIN_PASSWORD
+        envFrom:
+        - configMapRef:
+            name: jenkins-config
+        volumeMounts:
+        - name: jenkins-home
+          mountPath: /var/jenkins_home
+      volumes:
+      - name: jenkins-home
+        hostPath:
+          path: /mnt/data/jenkins
+          type: DirectoryOrCreate
+---
+# Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+  namespace: jenkins
+spec:
+  selector:
+    app: jenkins
+  ports:
+    - name: http
+      port: 8080
+      targetPort: 8080
+      nodePort: 30080
+    - name: jnlp
+      port: 50000
+      targetPort: 50000
+  type: NodePort
