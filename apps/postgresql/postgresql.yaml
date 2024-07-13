@@ -30,20 +30,6 @@ data:
   POSTGRES_PASSWORD: c2NyYXBpbmc=  # 'scraping' codificado en base64
 
 ---
-# Persistent Volume Claim
-apiVersion: v1
-kind: PersistentVolumeClaim
-metadata:
-  name: postgres-pvc
-  namespace: postgres
-spec:
-  accessModes:
-    - ReadWriteOnce
-  resources:
-    requests:
-      storage: 1Gi
-
----
 # Deployment
 apiVersion: apps/v1
 kind: Deployment
@@ -51,7 +37,7 @@ metadata:
   name: postgres-deployment
   namespace: postgres
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: postgres
@@ -73,10 +59,12 @@ spec:
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
+          subPath: postgresql  # Esto evita que PostgreSQL cree un subdirectorio adicional
       volumes:
       - name: postgres-storage
-        persistentVolumeClaim:
-          claimName: postgres-pvc
+        hostPath:
+          path: /mnt/data/postgresql
+          type: DirectoryOrCreate  # Esto creará el directorio si no existe
 
 ---
 # Service
