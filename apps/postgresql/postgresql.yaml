@@ -6,7 +6,6 @@ metadata:
   name: postgres
   labels:
     parent: apps
-
 ---
 # ConfigMap para almacenar configuraciones
 apiVersion: v1
@@ -17,7 +16,6 @@ metadata:
 data:
   POSTGRES_DB: scraping
   POSTGRES_USER: scraping
-
 ---
 # Secret para almacenar la contraseña
 apiVersion: v1
@@ -28,10 +26,9 @@ metadata:
 type: Opaque
 data:
   POSTGRES_PASSWORD: c2NyYXBpbmc=  # 'scraping' codificado en base64
-
 ---
 # Deployment
-apiVersion: apps/v1
+apiVersion: v1
 kind: Deployment
 metadata:
   name: postgres-deployment
@@ -59,13 +56,12 @@ spec:
         volumeMounts:
         - name: postgres-storage
           mountPath: /var/lib/postgresql/data
-          subPath: postgresql  # Esto evita que PostgreSQL cree un subdirectorio adicional
+          # Eliminamos el subPath para permitir que PostgreSQL cree sus propios subdirectorios
       volumes:
       - name: postgres-storage
         hostPath:
           path: /mnt/data/postgresql
-          type: DirectoryOrCreate  # Esto creará el directorio si no existe
-
+          type: DirectoryOrCreate
 ---
 # Service
 apiVersion: v1
