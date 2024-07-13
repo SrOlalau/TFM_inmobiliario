@@ -5,7 +5,7 @@ FROM python:3.9-slim
 WORKDIR /app
 
 # Copia el archivo de script en el contenedor
-COPY b.py .
+COPY ./dockerfiles/test/b.py .
 
 # Ejecuta b.py cuando se inicie el contenedor
 CMD ["python", "b.py"]
