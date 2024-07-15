@@ -136,8 +136,8 @@ def generate_urls(provincias):
 def main():
     provincias = ["Barcelona", "Valencia", "Cantabria", "Alicante",
                   "Madrid", "Sevilla", "Bizkaia", "Malaga", "Granada"]
-    random.shuffle(provincias)
     URLS = generate_urls(provincias)
+    random.shuffle(URLS)
 
     for url, tipo, comunidad in URLS:
         filename = f'downloaded_trovit_data_{tipo}_{comunidad}_{today.year}{today.month:02d}{today.day:02d}.csv'
@@ -172,8 +172,8 @@ def main():
                     data.append(to_save)
             time.sleep(random.uniform(1.3, 4.3))
 
-            # A la mitad de las 100 request, espera 1,25 minutos promedio para evitar captcha
-            if (idx + 1) % 20 == 0:
+            # Cada 20 request, espera varios minutos promedio para evitar captcha
+            if (idx + 1) % 20 == 0 and (idx + 1) != n_pag:
                 time.sleep(random.uniform(500, 840))
 
         data_df = pd.DataFrame(data)
@@ -183,7 +183,7 @@ def main():
         data_df.to_csv(os.path.join(raw_data_path, filename), encoding='utf-8', index=False, sep=';')
         print(f'Saving {len(data_df)} obs. after drop duplicates')
         # Espera tiempo adicional para seguir con siguiente provincia
-        time.sleep(random.uniform(10, 20))
+        time.sleep(random.uniform(500, 840))
 
 if __name__ == '__main__':
     main()
