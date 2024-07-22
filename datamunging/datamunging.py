@@ -126,5 +126,5 @@ for column in columns_to_clean_consolidated:
 # Convertir las columnas 'latitude' y 'longitude' a tipo float
 consolidated_df['latitude'] = pd.to_numeric(consolidated_df['latitude'], errors='coerce')
 consolidated_df['longitude'] = pd.to_numeric(consolidated_df['longitude'], errors='coerce')
-
-consolidated_df.to_csv('consolidated_data.csv', index=False)
+dropped_df = consolidated_df.drop_duplicates(subset=consolidated_df.columns.difference(['fecha_extract']))
+dropped_df.to_csv('consolidated_data.csv', index=False)
