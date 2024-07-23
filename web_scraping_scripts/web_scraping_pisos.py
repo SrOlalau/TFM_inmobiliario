@@ -37,7 +37,6 @@ raw_data_path = crear_directorios(base_path)
 
 # Returns the current local date
 today = date.today()
-print("Today date is: ", today)
 
 # Calcula el número de páginas para iterar
 def num_paginas(soup):    
@@ -152,6 +151,7 @@ def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid', ultimasemana=
 
 # Hace las busquedas de ventas y alquileres en madrid
 def main(ultimasemana =True):
+    print("Today date is: ", today)
     TIPOS = ['alquiler', 'venta']
     CCAA = [
         'madrid', 'barcelona', 'valencia', 'granada',

@@ -30,7 +30,7 @@ raw_data_path = crear_directorios(base_path)
 
 # Returns the current local date
 today = date.today()
-print("Today's date is: ", today)
+
 
 
 # Calcula el número de páginas para iterar
@@ -169,6 +169,7 @@ def generate_urls(provincias):
 
 
 def main():
+    print("Today's date is: ", today)
     provincias = ["Barcelona", "Valencia", "Cantabria", "Alicante",
                   "Madrid", "Sevilla", "Bizkaia", "Malaga", "Granada"]
     URLS = generate_urls(provincias)
