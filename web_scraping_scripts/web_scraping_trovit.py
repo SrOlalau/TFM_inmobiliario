@@ -111,26 +111,61 @@ def hace_busqueda(num_search=None, url=None):
     return soup
 
 
+def generate_search_url(location, type_search, page=1, subsample='Ultima semana', order='source_date'):
+    # Base URL
+    base_url = "https://casas.trovit.es/index.php/cod.search_adwords_homes/"
+
+    # Type mapping
+    type_mapping = {
+        'venta': '1',
+        'alquiler': '2'
+    }
+
+    # Order mapping
+    order_mapping = {
+        'source_date': 'source_date',
+        'relevance': 'relevance'
+    }
+
+    # Subsample mapping
+    subsample_mapping = {
+        'Ultima semana': '7',
+        'Ultimo dia': '1'
+    }
+
+    # Validate type
+    if type_search not in type_mapping:
+        raise ValueError("Invalid type. Choose 'venta' or 'alquiler'.")
+
+    # Validate order
+    if order not in order_mapping:
+        raise ValueError("Invalid order. Choose 'source_date' or 'relevance'.")
+
+    # Build URL
+    url = f"{base_url}type.{type_mapping[type_search]}/what_d.{location}/order_by.{order_mapping[order]}"
+
+    # Add subsample if provided
+    if subsample:
+        if subsample not in subsample_mapping:
+            raise ValueError("Invalid subsample. Choose 'Ultima semana' or 'Ultimo dia'.")
+        url += f"/date_from.{subsample_mapping[subsample]}"
+
+    # Add page
+    url += f"/page.{page}"
+
+    return url
+
+
 def generate_urls(provincias):
-    base_url = "https://casas.trovit.es"
     urls = []
-
-    # Lista de provincias bajo nombre comunidad
-    comunidad = ["Madrid"]
-
     for provincia in provincias:
-        # Determinar si debemos agregar "-provincia" al final
-        suffix = "-comunidad" if provincia in comunidad else "-provincia"
-
-        alquiler_url = f"{base_url}/alquiler-{provincia.lower().replace(' ', '-')}{suffix}"
-        venta_url = f"{base_url}/{provincia.lower().replace(' ', '-')}{suffix}-piso"
-
+        alquiler_url = generate_search_url(location=provincia, type_search="alquiler", subsample="Ultima semana")
+        venta_url = generate_search_url(location=provincia, type_search="venta", subsample="Ultima semana")
         urls.extend([
             (alquiler_url, "alquiler", provincia),
             (venta_url, "venta", provincia)
         ])
     return urls
-
 
 
 def main():
@@ -161,7 +196,9 @@ def main():
             while anuncios is None:
                 try:
                     print(f'Buscando página {idx + 1}/{n_pag}')
-                    soup = hace_busqueda(num_search=i, url=url)
+                    page_url = generate_search_url(location=comunidad, type_search=tipo,
+                                                   page=i, subsample="Ultima semana")
+                    soup = hace_busqueda(url=page_url)
                     anuncios = soup.find_all('div', class_='snippet-wrapper')
                 except AttributeError:
                     time.sleep(random.uniform(3, 7))
@@ -174,7 +211,7 @@ def main():
 
             # Cada 20 request, espera varios minutos promedio para evitar captcha
             if (idx + 1) % 20 == 0 and (idx + 1) != n_pag:
-                time.sleep(random.uniform(500, 840))
+                time.sleep(random.uniform(560, 840))
 
         data_df = pd.DataFrame(data)
         print(f'Downloaded {len(data_df)} obs. for {comunidad} - {tipo}')
@@ -183,7 +220,7 @@ def main():
         data_df.to_csv(os.path.join(raw_data_path, filename), encoding='utf-8', index=False, sep=';')
         print(f'Saving {len(data_df)} obs. after drop duplicates')
         # Espera tiempo adicional para seguir con siguiente provincia
-        time.sleep(random.uniform(500, 840))
+        time.sleep(random.uniform(560, 840))
 
 if __name__ == '__main__':
     main()
