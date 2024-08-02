@@ -4,18 +4,19 @@ import time
 import json
 import os
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-cache_path = os.path.join(script_dir, 'geocode_cache.json')
-
 class GeocoderCache:
-    def __init__(self, cache_file=cache_path):
+    def __init__(self, cache_file):
         self.cache_file = cache_file
         self.cache = self.load_cache()
 
     def load_cache(self):
         if os.path.exists(self.cache_file):
-            with open(self.cache_file, 'r') as f:
-                return json.load(f)
+            try:
+                with open(self.cache_file, 'r') as f:
+                    return json.load(f)
+            except json.JSONDecodeError:
+                print(f"Warning: Cache file {self.cache_file} is corrupted. Starting with an empty cache.")
+                return {}
         return {}
 
     def save_cache(self):
@@ -57,46 +58,50 @@ class GeocoderCache:
             return None, None, True
 
     def process_and_geocode(self, df, address_column='ubicacion'):
-        addresses = df[address_column].dropna().unique()
+        # Filter for rows where latitude or longitude is NA
+        mask = df['latitude'].isna() | df['longitude'].isna()
+        addresses_to_geocode = df.loc[mask, address_column].dropna().unique()
 
-        geocoded_data = {'address': [], 'latitude': [], 'longitude': [], 'error': []}
-
-        for address in addresses:
+        for address in addresses_to_geocode:
             lat, lon, request_made = self.get_coordinates(address)
-            geocoded_data['address'].append(address)
-            geocoded_data['latitude'].append(lat)
-            geocoded_data['longitude'].append(lon)
 
-            error = self.cache[address].get('error') if isinstance(self.cache[address], dict) else None
-            geocoded_data['error'].append(error)
+            if lat is not None and lon is not None:
+                # Update the DataFrame in-place
+                df.loc[(df[address_column] == address) & mask, 'latitude'] = float(lat)
+                df.loc[(df[address_column] == address) & mask, 'longitude'] = float(lon)
+            else:
+                error = self.cache[address].get('error') if isinstance(self.cache[address], dict) else None
+                df.loc[(df[address_column] == address) & mask, 'geocoding_error'] = error
 
             if request_made:
                 time.sleep(1)  # Pause only if a new request was made
 
         self.save_cache()
-
-        geocoded_df = pd.DataFrame(geocoded_data)
-
-        result_df = df.merge(geocoded_df, left_on=address_column, right_on='address', how='left')
-
-        return result_df
+        return df
 
 
-# Example usage:
-if __name__ == "__main__":
+def main(output_file_path=None):
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    cache_path = os.path.join(script_dir, 'geocode_cache.json')
     # Initialize the GeocoderCache
-    geocoder = GeocoderCache()
+    geocoder = GeocoderCache(cache_file=cache_path)
 
-    # Load your DataFrame
-    base_data_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "RawDataTFM")
-    file_path = os.path.join(base_data_path,'downloaded_trovit_data_alquiler_Madrid_20240630.csv')
-    df = pd.read_csv(file_path, sep=';')
+    datamunging_path = os.path.join(os.path.dirname(os.path.dirname(script_dir)),
+                                    'datamunging/consolidated_data.csv')
+    df = pd.read_csv(datamunging_path, low_memory=False)
 
     # Process and geocode the data
     result_df = geocoder.process_and_geocode(df, address_column='ubicacion')
 
-    # Save the resulting DataFrame to a new CSV file
-    output_file_path = r'C:\Users\alons\Documents\ARCHIVOS PERSONALES\MS DATA SCIENCE UCM\TFM\paralelo/geocoded_data.csv'
-    result_df.to_csv(output_file_path, index=False)
+    # Si está definido el output_save_path, se guardan los datos como csv, si no, entonces hace un return de los datos
+    if output_file_path:
+        # Save the resulting DataFrame to a new CSV file
+        result_df.to_csv(output_file_path, index=False)
+        print(f"Geocoded data saved to {output_file_path}")
+        return None
 
-    print(f"Geocoded data saved to {output_file_path}")
+    return result_df
+
+# Example usage:
+if __name__ == "__main__":
+    main()
