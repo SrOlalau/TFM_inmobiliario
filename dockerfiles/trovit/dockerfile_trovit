@@ -34,4 +34,5 @@ RUN crontab /etc/cron.d/trovit-cron
 
 # Define el comando por defecto para ejecutar el script de entrada
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD []
+# Define el comando por defecto para listar archivos y ejecutar el script de entrada
+CMD ["sh", "-c", "ls -l /app && /app/entrypoint.sh"]
