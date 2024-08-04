@@ -1,11 +1,14 @@
 name: Docker Build and Publish
 
-on:
-  push:
-    branches: [ Servidor ]  # Ajusta esto si tu rama principal tiene un nombre diferente
-
 env:
   DOCKER_REPOSITORY: srolalau/vcro_test
+  DOCKERFILE_PATH: dockerfiles/test/dockerfile_b
+
+on:
+  push:
+    branches: [ Servidor ]
+    paths:
+      - '${{ env.DOCKERFILE_PATH }}'
 
 jobs:
   build-and-push:
@@ -27,6 +30,6 @@ jobs:
       uses: docker/build-push-action@v2
       with:
         context: .
-        file: ./dockerfiles/test/dockerfile_b  # Especifica la ruta al dockerfile
+        file: ${{ env.DOCKERFILE_PATH }}
         push: true
         tags: ${{ env.DOCKER_REPOSITORY }}:latest,${{ env.DOCKER_REPOSITORY }}:${{ github.sha }}
