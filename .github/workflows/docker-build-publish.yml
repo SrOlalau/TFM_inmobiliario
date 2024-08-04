@@ -3,12 +3,13 @@ name: Docker Build and Publish
 env:
   DOCKER_REPOSITORY: srolalau/vcro_test
   DOCKERFILE_PATH: dockerfiles/test/dockerfile_b
+  DOCKERFILE_DIRECTORY: dockerfiles/test
 
 on:
   push:
     branches: [ Servidor ]
     paths:
-      - '${{ env.DOCKERFILE_PATH }}'
+      - '${{ env.DOCKERFILE_DIRECTORY }}/**'
 
 jobs:
   build-and-push:
