@@ -10,12 +10,26 @@ from bs4 import BeautifulSoup
 import psycopg2
 from psycopg2 import sql
 
+# Configura tu token de bot y el ID de chat
+TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
+TELEGRAM_CHAT_ID = '297175679'
+
 # Variables de conexión a la base de datos
 DB_NAME = "trovit_scraping"
 DB_USER = "trovit"
 DB_PASSWORD = "trovit"
 DB_HOST = "10.1.5.9"
 DB_PORT = "5432"
+
+def send_telegram_message(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'text': message
+    }
+    response = requests.post(url, data=payload)
+    if response.status_code != 200:
+        print(f"Error enviando mensaje a Telegram: {response.status_code}")
 
 # Aquí se inserta el segundo código para los User Agents y la función get_random_headers()
 user_agents = [
@@ -250,57 +264,68 @@ def insert_data_into_db(conn, data):
         conn.commit()
 
 def main():
-    print("Today's date is: ", today)
-    provincias = ["Barcelona", "Valencia", "Cantabria", "Alicante",
-                  "Madrid", "Sevilla", "Bizkaia", "Malaga", "Granada"]
-    URLS = generate_urls(provincias)
-    random.shuffle(URLS)
+    # Enviar mensaje al iniciar
+    send_telegram_message("Iniciando el script de scraping.")
+    
+    try:
+        print("Today's date is: ", today)
+        provincias = ["Barcelona", "Valencia", "Cantabria", "Alicante",
+                      "Madrid", "Sevilla", "Bizkaia", "Malaga", "Granada"]
+        URLS = generate_urls(provincias)
+        random.shuffle(URLS)
 
-    # Establece la conexión a la base de datos
-    conn = connect_db()
-    create_table_if_not_exists(conn)
+        # Establece la conexión a la base de datos
+        conn = connect_db()
+        create_table_if_not_exists(conn)
 
-    for url, tipo, comunidad in URLS:
-        print(f'--------- {tipo.upper()} - {comunidad} ---------')
-        print(url)
-        soup = hace_busqueda(url=url)
-        n_pag = num_paginas(soup)
+        for url, tipo, comunidad in URLS:
+            print(f'--------- {tipo.upper()} - {comunidad} ---------')
+            print(url)
+            soup = hace_busqueda(url=url)
+            n_pag = num_paginas(soup)
 
-        if n_pag is None:
-            print(f"No se pudo determinar el número de páginas para {tipo} en {comunidad}.")
-            continue
+            if n_pag is None:
+                print(f"No se pudo determinar el número de páginas para {tipo} en {comunidad}.")
+                continue
 
-        # Generar lista de números de páginas y mezclarla
-        paginas = list(range(1, n_pag + 1))
-        random.shuffle(paginas)
+            # Generar lista de números de páginas y mezclarla
+            paginas = list(range(1, n_pag + 1))
+            random.shuffle(paginas)
 
-        for idx, i in enumerate(paginas):
-            anuncios = None
-            while anuncios is None:
-                try:
-                    print(f'Buscando página {idx + 1}/{n_pag}')
-                    page_url = generate_search_url(location=comunidad, type_search=tipo,
-                                                   page=i, subsample="Ultima semana")
-                    soup = hace_busqueda(url=page_url)
-                    anuncios = soup.find_all('div', class_='snippet-wrapper')
-                except AttributeError:
-                    time.sleep(random.uniform(3, 7))
+            for idx, i in enumerate(paginas):
+                anuncios = None
+                while anuncios is None:
+                    try:
+                        print(f'Buscando página {idx + 1}/{n_pag}')
+                        page_url = generate_search_url(location=comunidad, type_search=tipo,
+                                                       page=i, subsample="Ultima semana")
+                        soup = hace_busqueda(url=page_url)
+                        anuncios = soup.find_all('div', class_='snippet-wrapper')
+                    except AttributeError:
+                        time.sleep(random.uniform(3, 7))
 
-            for anunc in anuncios:
-                to_save = get_all_relevant(anunc)
-                if to_save:
-                    to_save["CCAA"] = comunidad  # Añade la comunidad al diccionario
-                    insert_data_into_db(conn, to_save)
-            time.sleep(random.uniform(1.3, 4.3))
+                for anunc in anuncios:
+                    to_save = get_all_relevant(anunc)
+                    if to_save:
+                        to_save["CCAA"] = comunidad  # Añade la comunidad al diccionario
+                        insert_data_into_db(conn, to_save)
+                time.sleep(random.uniform(1.3, 4.3))
 
-            # Cada 20 request, espera varios minutos promedio para evitar captcha
-            if (idx + 1) % 20 == 0 and (idx + 1) != n_pag:
-                time.sleep(random.uniform(560, 840))
+                # Cada 20 request, espera varios minutos promedio para evitar captcha
+                if (idx + 1) % 20 == 0 and (idx + 1) != n_pag:
+                    time.sleep(random.uniform(560, 840))
 
-        # Espera tiempo adicional para seguir con siguiente provincia
-        time.sleep(random.uniform(560, 840))
+            # Espera tiempo adicional para seguir con siguiente provincia
+            time.sleep(random.uniform(560, 840))
 
-    conn.close()
+        conn.close()
+    
+    except Exception as e:
+        send_telegram_message(f"Error en el script: {e}")
+        raise
+
+    # Enviar mensaje al finalizar
+    send_telegram_message("El script de scraping ha finalizado.")
 
 if __name__ == '__main__':
     main()

@@ -10,8 +10,27 @@ COPY ./dockerfiles/trovit/requisitos.txt /app/requisitos.txt
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requisitos.txt
 
+# Instala cron
+RUN apt-get update && \
+    apt-get install -y cron && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # Copia el archivo de Python al contenedor
 COPY ./dockerfiles/trovit/main.py /app/main.py
 
-# Define el comando por defecto para ejecutar el script
-CMD ["python","-u","main.py"]
+# Copia el archivo de cron al contenedor
+COPY ./dockerfiles/trovit/crontab /etc/cron.d/trovit-cron
+
+# Copia el script de entrada al contenedor
+COPY ./dockerfiles/trovit/entrypoint.sh /app/entrypoint.sh
+
+# Da permisos de ejecución al archivo de cron y al script de entrada
+RUN chmod 0644 /etc/cron.d/trovit-cron && \
+    chmod +x /app/entrypoint.sh
+
+# Aplica el archivo de cron
+RUN crontab /etc/cron.d/trovit-cron
+
+# Define el comando por defecto para ejecutar el script de entrada
+ENTRYPOINT ["/app/entrypoint.sh"]
