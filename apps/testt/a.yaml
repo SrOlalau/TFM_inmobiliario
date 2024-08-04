@@ -2,7 +2,7 @@ version: '3'
 services:
   rickroll:
     container_name: rickroll
-    image: 'kale5/rickroll:latest'
+    image: 'kale5/rickroll:vclatest'
     restart: unless-stopped
     ports:
       - '8081:80'
