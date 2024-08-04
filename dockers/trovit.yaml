@@ -1,0 +1,7 @@
+version: '3.8'
+
+services:
+  trovitscript:
+    image: srolalau/trovit:latest
+    container_name: trovitscript
+    restart: unless-stopped
