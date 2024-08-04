@@ -33,4 +33,4 @@ RUN chmod 0644 /etc/cron.d/trovit-cron && \
 RUN crontab /etc/cron.d/trovit-cron
 
 # Define el comando por defecto para ejecutar el script de entrada
-ENTRYPOINT ["entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
