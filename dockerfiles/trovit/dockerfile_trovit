@@ -27,7 +27,7 @@ COPY ./dockerfiles/trovit/entrypoint.sh /app/entrypoint.sh
 
 # Da permisos de ejecución al archivo de cron y al script de entrada
 RUN chmod 0644 /etc/cron.d/trovit-cron && \
-RUN chmod +x /app/entrypoint.sh
+    chmod +x /app/entrypoint.sh
 
 # Aplica el archivo de cron
 RUN crontab /etc/cron.d/trovit-cron
