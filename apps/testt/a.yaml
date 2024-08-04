@@ -1,0 +1,8 @@
+version: '3'
+services:
+  rickroll:
+    container_name: rickroll
+    image: 'kale5/rickroll:latest'
+    restart: unless-stopped
+    ports:
+      - '8080:80'
