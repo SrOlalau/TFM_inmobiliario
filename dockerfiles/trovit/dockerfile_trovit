@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requisitos.txt
 COPY ./dockerfiles/trovit/main.py /app/main.py
 
 # Define el comando por defecto para ejecutar el script
-CMD ["python", "main.py"]
+CMD ["python","-u","main.py"]
