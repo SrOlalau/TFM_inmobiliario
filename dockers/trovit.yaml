@@ -7,5 +7,5 @@ services:
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
-    volumes:
-      - /var/log/cron.log:/var/log/cron.log  # Opcional, para ver los logs de cron
+    entrypoint: /bin/bash
+    command: -c "chmod +x /app/entrypoint.sh && /app/entrypoint.sh"
