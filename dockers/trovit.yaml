@@ -5,3 +5,5 @@ services:
     image: srolalau/trovit:latest
     container_name: trovitscript
     restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
