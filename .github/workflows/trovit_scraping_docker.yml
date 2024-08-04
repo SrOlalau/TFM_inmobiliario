@@ -4,7 +4,7 @@ name: trovit_scraping_docker
 # Variables de entorno globales. Modifica estos valores según tu configuración.
 env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
-  DOCKER_REPOSITORY: srolalau/vcro_trovit
+  DOCKER_REPOSITORY: srolalau/trovit
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
   DOCKERFILE_PATH: dockerfiles/trovit/dockerfile_trovit
 
