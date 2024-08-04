@@ -218,44 +218,35 @@ def create_table_if_not_exists(conn):
         create_table_query = sql.SQL("""
             CREATE TABLE IF NOT EXISTS scraping_trovit_tabla (
                 id SERIAL PRIMARY KEY,
-                precio VARCHAR(50),
+                precio TEXT,
                 sub_descr TEXT,
                 href TEXT,
                 ubicacion TEXT,
-                habitaciones INTEGER,
-                banios INTEGER,
-                mt2 INTEGER,
+                habitaciones TEXT,
+                banios TEXT,
+                mt2 TEXT,
                 otros TEXT,
-                publicado_hace VARCHAR(50),
-                plataforma VARCHAR(100),
-                CCAA VARCHAR(100),
+                publicado_hace TEXT,
+                plataforma TEXT,
+                CCAA TEXT,
                 fecha DATE DEFAULT CURRENT_DATE
             )
         """)
         cur.execute(create_table_query)
         conn.commit()
 
-def insert_data_to_db(conn, data):
+def insert_data_into_db(conn, data):
     with conn.cursor() as cur:
         insert_query = sql.SQL("""
             INSERT INTO scraping_trovit_tabla (
-                precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, otros, publicado_hace, plataforma, CCAA, fecha
-            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE)
+                precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, otros,
+                publicado_hace, plataforma, CCAA, fecha
+            ) VALUES (
+                %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s, %(mt2)s, %(otros)s,
+                %(publicado_hace)s, %(plataforma)s, %(CCAA)s, CURRENT_DATE
+            )
         """)
-        for row in data:
-            cur.execute(insert_query, (
-                row.get("precio"),
-                row.get("sub_descr"),
-                row.get("href"),
-                row.get("ubicacion"),
-                row.get("habitaciones"),
-                row.get("banios"),
-                row.get("mt2"),
-                row.get("otros"),
-                row.get("publicado_hace"),
-                row.get("plataforma"),
-                row.get("CCAA")
-            ))
+        cur.execute(insert_query, data)
         conn.commit()
 
 def main():
@@ -265,6 +256,7 @@ def main():
     URLS = generate_urls(provincias)
     random.shuffle(URLS)
 
+    # Establece la conexión a la base de datos
     conn = connect_db()
     create_table_if_not_exists(conn)
 
@@ -274,11 +266,14 @@ def main():
         soup = hace_busqueda(url=url)
         n_pag = num_paginas(soup)
 
+        if n_pag is None:
+            print(f"No se pudo determinar el número de páginas para {tipo} en {comunidad}.")
+            continue
+
         # Generar lista de números de páginas y mezclarla
         paginas = list(range(1, n_pag + 1))
         random.shuffle(paginas)
 
-        data = []
         for idx, i in enumerate(paginas):
             anuncios = None
             while anuncios is None:
@@ -294,17 +289,13 @@ def main():
             for anunc in anuncios:
                 to_save = get_all_relevant(anunc)
                 if to_save:
-                    to_save["CCAA"] = comunidad  # Add the CCAA field
-                    data.append(to_save)
+                    to_save["CCAA"] = comunidad  # Añade la comunidad al diccionario
+                    insert_data_into_db(conn, to_save)
             time.sleep(random.uniform(1.3, 4.3))
 
             # Cada 20 request, espera varios minutos promedio para evitar captcha
             if (idx + 1) % 20 == 0 and (idx + 1) != n_pag:
                 time.sleep(random.uniform(560, 840))
-
-        if data:
-            insert_data_to_db(conn, data)
-            print(f'Inserted {len(data)} records for {comunidad} - {tipo}')
 
         # Espera tiempo adicional para seguir con siguiente provincia
         time.sleep(random.uniform(560, 840))
@@ -313,3 +304,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
