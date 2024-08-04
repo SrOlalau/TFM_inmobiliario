@@ -69,13 +69,20 @@ today = date.today()
 
 # Calcula el número de páginas para iterar
 def num_paginas(soup):
-    results_counter = soup.find('div', class_='results-counter js-results-counter')
-    if results_counter:
-        total_count_text = results_counter.find('span', {'data-test': 'results'}).text
-        total_count = int(total_count_text.replace('.', ''))
-        n_paginas = math.ceil(total_count / RESULTS_PER_PAGE)
-        return min(n_paginas, MAX_PAGES)
-    return None
+    try:
+        results_counter = soup.find('div', class_='results-counter js-results-counter')
+        if results_counter:
+            total_count_text = results_counter.find('span', {'data-test': 'results'}).text
+            total_count = int(total_count_text.replace('.', ''))
+            n_paginas = math.ceil(total_count / RESULTS_PER_PAGE)
+            return min(n_paginas, MAX_PAGES)
+        else:
+            print("No se encontró el contador de resultados.")
+            return None
+    except Exception as e:
+        print(f"Error al calcular el número de páginas: {e}")
+        return None
+
 
 def extract_property_info(snippet):
     property_info = {}
