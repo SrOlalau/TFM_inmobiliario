@@ -13,4 +13,4 @@ __pycache__/
 .DS_Store
 
 # Ignora base de datos consolidados, para mantener solamente los datos una vez
-consolidated_data.csvconsolidated_data.csv
+/datamunging/consolidated_data.csv
