@@ -11,3 +11,6 @@ __pycache__/
 
 # Ignorar archivos de sistema
 .DS_Store
+
+# Ignora base de datos consolidados, para mantener solamente los datos una vez
+consolidated_data.csvconsolidated_data.csv
