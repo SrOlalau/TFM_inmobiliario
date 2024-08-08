@@ -76,6 +76,17 @@ user_agents = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) AppleWebKit/601.6.17 (KHTML, like Gecko) Version/11.0.3 Safari/601.6.17'
 ]
 
+def get_random_headers():
+    headers = {
+        'User-Agent': random.choice(user_agents),
+        'Accept-Language': 'es-ES,es;q=0.9,en;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+    }
+    return headers
+
 # Creación de directorios
 def crear_directorios(base_path):
     if not os.path.exists(base_path):
@@ -188,9 +199,9 @@ def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid', ultimasemana=
     while True:
         try:
             if num_search:
-                response = requests.get(url + str(num_search), headers=user_agents(), timeout=20)
+                response = requests.get(url + str(num_search), headers=get_random_headers(), timeout=20)
             else:
-                response = requests.get(url, headers=user_agents(), timeout=20)
+                response = requests.get(url, headers=get_random_headers(), timeout=20)
             soup = BeautifulSoup(response.text, 'html.parser')
             return soup
         except requests.exceptions.ConnectionError:
