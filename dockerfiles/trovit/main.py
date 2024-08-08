@@ -258,7 +258,7 @@ def insert_data_into_db(conn, data):
 
 def main():
     # Enviar mensaje al iniciar
-    send_telegram_message("Iniciando el script de scraping.")
+    send_telegram_message("Iniciando el script de scraping trovit.")
     
     try:
         print("Today's date is: ", today)
@@ -318,7 +318,7 @@ def main():
         raise
 
     # Enviar mensaje al finalizar
-    send_telegram_message("El script de scraping ha finalizado.")
+    send_telegram_message("El script de scraping de trovit ha finalizado.")
 
 if __name__ == '__main__':
     main()

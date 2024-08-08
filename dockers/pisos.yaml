@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  trovitscript:
+    image: srolalau/pisos:latest
+    container_name: pisoscript
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - /var/log/cron.log:/var/log/cron.log  # Opcional, para ver los logs de cron
