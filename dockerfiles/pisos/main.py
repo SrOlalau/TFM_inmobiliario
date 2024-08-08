@@ -25,11 +25,11 @@ TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
 TELEGRAM_CHAT_ID = '297175679'
 
 # Variables de conexión a la base de datos
-DB_NAME = "trovit_scraping"
-DB_USER = "trovit"
-DB_PASSWORD = "trovit"
+DB_NAME = "pisos_scrpaing"
+DB_USER = "pisos"
+DB_PASSWORD = "pisos"
 DB_HOST = "10.1.5.9"
-DB_PORT = "5432"
+DB_PORT = "5433"
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
