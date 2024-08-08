@@ -97,56 +97,46 @@ def num_paginas(soup):
         print(f"Error al calcular el número de páginas: {e}")
         return None
 
-
 def extract_property_info(snippet):
     property_info = {}
 
     # Extract price
     price_element = snippet.find('span', class_='actual-price')
-    if price_element:
-        property_info["precio"] = price_element.text.strip()
+    property_info["precio"] = price_element.text.strip() if price_element else None
 
     # Extract sub_description
     sub_desc_element = snippet.find('div', class_='item-title')
-    if sub_desc_element:
-        property_info["sub_descr"] = sub_desc_element.text.strip()
-        link_element = snippet.find('a', class_='rd-link')
-        if link_element:
-            property_info["href"] = link_element['href'].strip()
+    property_info["sub_descr"] = sub_desc_element.text.strip() if sub_desc_element else None
+
+    link_element = snippet.find('a', class_='rd-link')
+    property_info["href"] = link_element['href'].strip() if link_element else None
 
     # Extract location
     location_element = snippet.find('span', class_='address')
-    if location_element:
-        property_info["ubicacion"] = location_element.text.strip()
+    property_info["ubicacion"] = location_element.text.strip() if location_element else None
 
     # Extract bedrooms, bathrooms, and area
     rooms_element = snippet.find('div', class_='item-property item-rooms')
-    if rooms_element:
-        property_info["habitaciones"] = rooms_element.text.strip()
+    property_info["habitaciones"] = rooms_element.text.strip() if rooms_element else None
 
     baths_element = snippet.find('div', class_='item-property item-baths')
-    if baths_element:
-        property_info["banios"] = baths_element.text.strip()
+    property_info["banios"] = baths_element.text.strip() if baths_element else None
 
     area_element = snippet.find('div', class_='item-property item-size')
-    if area_element:
-        property_info["mt2"] = area_element.text.strip()
+    property_info["mt2"] = area_element.text.strip() if area_element else None
 
     # Extract additional details if available
     desc_element = snippet.find('div', class_='item-description')
-    if desc_element:
-        property_info["otros"] = desc_element.text.strip()
+    property_info["otros"] = desc_element.text.strip() if desc_element else None
 
     # Extract extra info
     extra_info_element = snippet.find('div', class_='item-extra-info')
     if extra_info_element:
         published_time_element = extra_info_element.find('span', class_='item-published-time')
-        if published_time_element:
-            property_info["publicado_hace"] = published_time_element.text.strip()
-        
+        property_info["publicado_hace"] = published_time_element.text.strip() if published_time_element else None
+
         platform_element = extra_info_element.find('span', class_='item-source')
-        if platform_element:
-            property_info["plataforma"] = platform_element.text.strip()
+        property_info["plataforma"] = platform_element.text.strip() if platform_element else None
 
     return property_info
 
@@ -260,8 +250,11 @@ def insert_data_into_db(conn, data):
                 %(publicado_hace)s, %(plataforma)s, %(CCAA)s, CURRENT_DATE
             )
         """)
-        cur.execute(insert_query, data)
-        conn.commit()
+        try:
+            cur.execute(insert_query, data)
+            conn.commit()
+        except KeyError as e:
+            print(f"Falta el campo {e} en el diccionario de datos, no se insertó en la base de datos.")
 
 def main():
     # Enviar mensaje al iniciar
@@ -329,4 +322,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

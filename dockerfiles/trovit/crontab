@@ -1,2 +1,0 @@
-# Ejecuta el script a las 3:00 AM todos los días
-0 7 * * * /usr/local/bin/python /app/main.py >> /var/log/cron.log 2>&1
