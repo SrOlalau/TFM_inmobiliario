@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
 
-# Ejecuta el script de Python
-python -u /app/main.py &
-
+# Ejecuta el script de Python en primer plano
+python -u /app/main.py
