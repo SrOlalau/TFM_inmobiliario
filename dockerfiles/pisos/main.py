@@ -115,7 +115,17 @@ def num_paginas(soup):
     return 0  # Si no hay resultados, devuelve 0 páginas
 
 def extract_property_info(cuadro_info):
-    property_info = {}
+    property_info = {
+        "precio": None,
+        "sub_descr": None,
+        "href": None,
+        "ubicacion": None,
+        "habitaciones": None,
+        "banios": None,
+        "mt2": None,
+        "planta": None,
+        "otros": None
+    }
 
     # Extract price
     if cuadro_info.span:
@@ -171,8 +181,8 @@ def get_all_relevant(anunc):
 
     try:
         cuadro_inf_json = json.loads(json_text)
-        to_save['latitude'] = cuadro_inf_json['geo']['latitude']
-        to_save['longitude'] = cuadro_inf_json['geo']['longitude']
+        to_save['latitude'] = cuadro_inf_json.get('geo', {}).get('latitude', None)
+        to_save['longitude'] = cuadro_inf_json.get('geo', {}).get('longitude', None)
     except JSONDecodeError:
         try:
             # Extract latitude and longitude directly using regex
@@ -187,6 +197,10 @@ def get_all_relevant(anunc):
         except Exception as e:
             # Handle any other exception and save the raw JSON
             to_save['raw_json'] = json_text
+    
+    # Ensure 'raw_json' key exists even if it's not used
+    if 'raw_json' not in to_save:
+        to_save['raw_json'] = None
 
     return to_save
 
@@ -259,6 +273,7 @@ def insert_data_into_db(conn, data):
         conn.commit()
 
 # Hace las busquedas de ventas y alquileres en madrid
+# Hace las busquedas de ventas y alquileres en madrid
 def main(ultimasemana=True):
     send_telegram_message("Iniciando scraping de pisos.com.")
     conn = connect_db()
@@ -330,3 +345,4 @@ def main(ultimasemana=True):
 if __name__ == '__main__':
     main()
     time.sleep(random.uniform(30, 60))
+
