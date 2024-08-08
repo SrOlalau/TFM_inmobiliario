@@ -181,8 +181,8 @@ def get_all_relevant(anunc):
 
     try:
         cuadro_inf_json = json.loads(json_text)
-        to_save['latitude'] = cuadro_inf_json.get('geo', {}).get('latitude', None)
-        to_save['longitude'] = cuadro_inf_json.get('geo', {}).get('longitude', None)
+        to_save['latitude'] = float(cuadro_inf_json.get('geo', {}).get('latitude', 0))
+        to_save['longitude'] = float(cuadro_inf_json.get('geo', {}).get('longitude', 0))
     except JSONDecodeError:
         try:
             # Extract latitude and longitude directly using regex
@@ -190,8 +190,8 @@ def get_all_relevant(anunc):
             longitude = re.search(r'"longitude"\s*:\s*(-?\d+\.\d+)', json_text)
             
             if latitude and longitude:
-                to_save['latitude'] = float(latitude.group(1))
-                to_save['longitude'] = float(longitude.group(1))
+                to_save['latitude'] = float(latitude.group(1).replace(',', '.'))
+                to_save['longitude'] = float(longitude.group(1).replace(',', '.'))
             else:
                 to_save['raw_json'] = json_text  # Save raw JSON if fields are not found
         except Exception as e:
@@ -290,12 +290,6 @@ def main(ultimasemana=True):
     try:
         for tipo in TIPOS:
             for comunidad in CCAA:
-                filename = f'downloaded_data_{tipo}_{comunidad}_{today.year}{today.month:02d}{today.day:02d}.csv'
-                filepath = os.path.join(raw_data_path, filename)
-                if os.path.exists(filepath):
-                    print(f'El archivo {filename} ya existe. Pasando al siguiente archivo.')
-                    continue
-
                 print(f'--------- {tipo.upper()} - {comunidad} ---------')
                 soup = hace_busqueda(tipo=tipo, ccaa=comunidad, ultimasemana=ultimasemana)
                 n_pag = num_paginas(soup)
@@ -308,7 +302,6 @@ def main(ultimasemana=True):
                 paginas = list(range(1, n_pag + 1))
                 random.shuffle(paginas)
 
-                data = []
                 for idx, i in enumerate(paginas):
                     anuncios = None
                     while anuncios is None:
@@ -324,13 +317,7 @@ def main(ultimasemana=True):
                         if to_save:
                             to_save["CCAA"] = comunidad
                             insert_data_into_db(conn, to_save)
-                            data.append(to_save)
                     time.sleep(random.uniform(1.1, 3.5))
-
-                data_df = pd.DataFrame(data)
-                data_df.drop_duplicates(inplace=True)
-                data_df['CCAA'] = comunidad
-                data_df.to_csv(os.path.join(raw_data_path, filename), encoding='utf-8', index=False, sep=';')
 
                 # Espera tiempo adicional para seguir con siguiente CCAA
                 time.sleep(random.uniform(2, 15))
@@ -345,4 +332,5 @@ def main(ultimasemana=True):
 if __name__ == '__main__':
     main()
     time.sleep(random.uniform(30, 60))
+
 
