@@ -9,7 +9,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.ensemble import RandomForestRegressor
 
 # Ruta del archivo CSV
-file_path = '/Users/diegogloriasalamanca/Library/Mobile Documents/com~apple~CloudDocs/Master Data Science/99 TFM/TFM Inmobiliario/datamunging/consolidated_data.csv'
+file_path = = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
 
 # Leer el archivo CSV en un DataFrame
 df = pd.read_csv(file_path)

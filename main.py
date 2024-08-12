@@ -1,6 +1,7 @@
 from web_scraping_scripts import web_scraping_pisos, web_scraping_trovit
 from data.POI import POI_OSM_downloader
 from datamunging import datamunging
+from datamining import datamining_un_df
 from data.geolocations import add_geoloc
 
 def scraping():
@@ -20,6 +21,9 @@ def preprocesado():
     print(geolocated_data.head())
     print(geolocated_data.info())
 
+def machine_learning ():
+    # Modelos de predicción de variable objetivo
+    datamining_un_df.main()
 
 if __name__ == '__main__':
     # Primero descarga puntos de interés
@@ -30,5 +34,5 @@ if __name__ == '__main__':
 
     # Después de hacer el scrpaping diario, vuelve a juntar todos los csv y ejecuta datamunging
     preprocesado()
-
+    machine_learning()
 
