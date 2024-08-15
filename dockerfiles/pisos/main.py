@@ -212,6 +212,7 @@ def get_all_relevant(anunc):
         to_save['raw_json'] = None
 
     return to_save
+
 def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid', ultimasemana=False):
     base_url = f'https://www.pisos.com/{tipo}/pisos-{ccaa}/'
     if ultimasemana:
@@ -260,6 +261,7 @@ def create_table_if_not_exists(conn):
                 longitude FLOAT,
                 raw_json TEXT,
                 CCAA TEXT,
+                tipo TEXT,
                 fecha DATE DEFAULT CURRENT_DATE
             )
         """)
@@ -271,16 +273,15 @@ def insert_data_into_db(conn, data):
         insert_query = sql.SQL("""
             INSERT INTO scraping_pisos_tabla (
                 precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, otros,
-                latitude, longitude, raw_json, CCAA, fecha
+                latitude, longitude, raw_json, CCAA, tipo, fecha
             ) VALUES (
                 %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s, %(mt2)s, %(otros)s,
-                %(latitude)s, %(longitude)s, %(raw_json)s, %(CCAA)s, CURRENT_DATE
+                %(latitude)s, %(longitude)s, %(raw_json)s, %(CCAA)s, %(tipo)s, CURRENT_DATE
             )
         """)
         cur.execute(insert_query, data)
         conn.commit()
 
-# Hace las busquedas de ventas y alquileres en madrid
 # Hace las busquedas de ventas y alquileres en madrid
 def main(ultimasemana=True):
     send_telegram_message("Iniciando scraping de pisos.com.")
@@ -324,6 +325,7 @@ def main(ultimasemana=True):
                         to_save = get_all_relevant(anunc)
                         if to_save:
                             to_save["CCAA"] = comunidad
+                            to_save["tipo"] = tipo  # Añadir el tipo (venta o alquiler) al diccionario
                             insert_data_into_db(conn, to_save)
                     time.sleep(random.uniform(1.1, 3.5))
 
@@ -340,5 +342,3 @@ def main(ultimasemana=True):
 if __name__ == '__main__':
     main()
     time.sleep(random.uniform(30, 60))
-
-
