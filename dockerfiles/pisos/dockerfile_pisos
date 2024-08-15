@@ -20,4 +20,4 @@ COPY ./dockerfiles/pisos/entrypoint.sh /app/entrypoint.sh
 RUN chmod +x /app/entrypoint.sh
 
 # Define el comando por defecto para listar archivos y ejecutar el script de entrada
-CMD ["/app/entrypoint.sh"]
+CMD ["python", "-u", "/app/main.py"]
