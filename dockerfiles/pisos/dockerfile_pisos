@@ -13,11 +13,5 @@ RUN pip install --no-cache-dir -r requisitos.txt
 # Copia el archivo de Python al contenedor
 COPY ./dockerfiles/pisos/main.py /app/main.py
 
-# Copia el script de entrada al contenedor
-COPY ./dockerfiles/pisos/entrypoint.sh /app/entrypoint.sh
-
-# Da permisos de ejecución al script de entrada
-RUN chmod +x /app/entrypoint.sh
-
 # Define el comando por defecto para listar archivos y ejecutar el script de entrada
 CMD ["python", "-u", "/app/main.py"]
