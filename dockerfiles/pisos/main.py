@@ -179,19 +179,28 @@ def get_all_relevant(anunc):
     json_text = html.unescape(json_text)
     json_text = re.sub(r'[\x00-\x1f\x7f]', '', json_text)  # Remove control characters
 
+    def parse_coordinate(value):
+        if isinstance(value, (int, float)):
+            return float(value)
+        elif isinstance(value, str):
+            # Replace comma with dot and convert to float
+            return float(value.replace(',', '.'))
+        else:
+            return 0.0
+
     try:
         cuadro_inf_json = json.loads(json_text)
-        to_save['latitude'] = float(cuadro_inf_json.get('geo', {}).get('latitude', 0))
-        to_save['longitude'] = float(cuadro_inf_json.get('geo', {}).get('longitude', 0))
+        to_save['latitude'] = parse_coordinate(cuadro_inf_json.get('geo', {}).get('latitude', 0))
+        to_save['longitude'] = parse_coordinate(cuadro_inf_json.get('geo', {}).get('longitude', 0))
     except JSONDecodeError:
         try:
             # Extract latitude and longitude directly using regex
-            latitude = re.search(r'"latitude"\s*:\s*(-?\d+\.\d+)', json_text)
-            longitude = re.search(r'"longitude"\s*:\s*(-?\d+\.\d+)', json_text)
+            latitude = re.search(r'"latitude"\s*:\s*(-?\d+[,.]?\d*)', json_text)
+            longitude = re.search(r'"longitude"\s*:\s*(-?\d+[,.]?\d*)', json_text)
             
             if latitude and longitude:
-                to_save['latitude'] = float(latitude.group(1).replace(',', '.'))
-                to_save['longitude'] = float(longitude.group(1).replace(',', '.'))
+                to_save['latitude'] = parse_coordinate(latitude.group(1))
+                to_save['longitude'] = parse_coordinate(longitude.group(1))
             else:
                 to_save['raw_json'] = json_text  # Save raw JSON if fields are not found
         except Exception as e:
@@ -203,7 +212,6 @@ def get_all_relevant(anunc):
         to_save['raw_json'] = None
 
     return to_save
-
 def hace_busqueda(num_search=None, tipo='alquiler', ccaa='madrid', ultimasemana=False):
     base_url = f'https://www.pisos.com/{tipo}/pisos-{ccaa}/'
     if ultimasemana:
