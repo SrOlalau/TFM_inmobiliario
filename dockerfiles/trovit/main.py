@@ -233,6 +233,7 @@ def create_table_if_not_exists(conn):
                 publicado_hace TEXT,
                 plataforma TEXT,
                 CCAA TEXT,
+                tipo TEXT,
                 fecha DATE DEFAULT CURRENT_DATE
             )
         """)
@@ -244,10 +245,10 @@ def insert_data_into_db(conn, data):
         insert_query = sql.SQL("""
             INSERT INTO scraping_trovit_tabla (
                 precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, otros,
-                publicado_hace, plataforma, CCAA, fecha
+                publicado_hace, plataforma, CCAA, tipo, fecha
             ) VALUES (
                 %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s, %(mt2)s, %(otros)s,
-                %(publicado_hace)s, %(plataforma)s, %(CCAA)s, CURRENT_DATE
+                %(publicado_hace)s, %(plataforma)s, %(CCAA)s, %(tipo)s, CURRENT_DATE
             )
         """)
         try:
@@ -301,6 +302,7 @@ def main():
                     to_save = get_all_relevant(anunc)
                     if to_save:
                         to_save["CCAA"] = comunidad  # Añade la comunidad al diccionario
+                        to_save["tipo"] = tipo  # Añade el tipo (venta o alquiler) al diccionario
                         insert_data_into_db(conn, to_save)
                 time.sleep(random.uniform(1.3, 4.3))
 
