@@ -32,14 +32,14 @@ def machine_learning ():
 
 if __name__ == '__main__':
     # Primero descarga puntos de interés
-    # descarga_info_adicional()
+    descarga_info_adicional()
 
     # Luego hace web scraping de los nuevos anuncios publicados en la última semana
-    # scraping()
+    scraping()
 
     # Después de hacer el scrpaping diario, vuelve a juntar todos los csv y ejecuta datamunging
     preprocesado()
-    data_tuning()
+    #data_tuning()
     machine_learning()
 
 
