@@ -4,6 +4,7 @@ from datamunging import datamunging
 from datamining import datamining_un_df
 from data.geolocations import add_geoloc
 from datatuning import datatuning
+import os
 
 def scraping():
     # Funciones que hacen web scraping
@@ -22,9 +23,13 @@ def preprocesado():
     print(geolocated_data.head())
     print(geolocated_data.info())
 
-def data_tuning ():
-    #Mejora de variables y preprocesado de información
-    datatuning.main()
+
+
+def data_tuning():
+    # Determine the script directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    # Mejora de variables y preprocesado de información
+    datatuning.main(script_dir)
 
 def machine_learning ():
     # Modelos de predicción de variable objetivo
@@ -32,14 +37,14 @@ def machine_learning ():
 
 if __name__ == '__main__':
     # Primero descarga puntos de interés
-    descarga_info_adicional()
+    #descarga_info_adicional()
 
     # Luego hace web scraping de los nuevos anuncios publicados en la última semana
-    scraping()
+    #scraping()
 
     # Después de hacer el scrpaping diario, vuelve a juntar todos los csv y ejecuta datamunging
     preprocesado()
-    #data_tuning()
+    data_tuning()
     machine_learning()
 
 
