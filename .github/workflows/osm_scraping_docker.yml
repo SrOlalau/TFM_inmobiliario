@@ -6,7 +6,7 @@ env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
   DOCKER_REPOSITORY: srolalau/osm
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/OSM/dockerfile_trovit
+  DOCKERFILE_PATH: dockerfiles/OSM/dockerfile_osm
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
