@@ -24,7 +24,7 @@ def preprocesado():
 
 def data_tuning ():
     #Mejora de variables y preprocesado de información
-    datatuning().main()
+    datatuning.main()
 
 def machine_learning ():
     # Modelos de predicción de variable objetivo
