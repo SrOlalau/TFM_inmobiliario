@@ -4,7 +4,7 @@ import glob
 import os
 
 # Ruta del archivo CSV
-def main():
+def main(script_dir):
     file_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
     df = pd.read_csv(file_path)
     output_path = os.path.join(script_dir, 'datatuning/datatuning.csv')
