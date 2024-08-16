@@ -1,58 +1,32 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+import os
 
-# Ruta del archivo CSV
-file_path = = os.path.join(script_dir, 'datatuning/consolidated_data.csv')
+def machine_learning(script_dir):
 
-# Leer el archivo CSV en un DataFrame
-df = pd.read_csv(file_path)
+    # Ruta del archivo CSV
+    file_path =  os.path.join(script_dir, 'datamunging/consolidated_data.csv')
 
-# Verificar el tamaño del DataFrame
-print(f"Tamaño del DataFrame: {df.shape}")
+    # Leer el archivo CSV en un DataFrame
+    df = pd.read_csv(file_path)
 
-# Establecer valores NaN para ciertas columnas
-puntos_interes = ['cinema', 'restaurant', 'theatre', 'police', 'supermarket',
-                   'pharmacy', 'bar', 'playground', 'cafe', 'monument', 'station',
-                   'clinic', 'post_office', 'convenience', 'sports_centre', 'atm',
-                   'memorial', 'museum', 'artwork', 'bicycle_rental', 'library', 
-                   'waste_disposal', 'platform', 'viewpoint', 'school', 'fuel', 'works', 
-                   'bus_station', 'clothes', 'fire_station', 'college', 'hospital', 
-                   'doctors', 'mall', 'stop_position', 'park', 'prison', 'fast_food', 
-                   'garden', 'marketplace', 'fountain', 'townhall', 'industrial', 
-                   'ferry_terminal', 'public_building', 'place_of_worship', 'bench', 
-                   'drinking_water', 'gym', 'stop_area', 'bird_hide', 'food_court', 'shelter', 
-                   'information', 'stationery', 'farm', 'yoga', 'attraction', 'mobile_library', 
-                   'chalet', 'parking_entrance', 'parking', 'wholesale', 'bakery', 'pub', 
-                   'vending_machine', 'pastry', 'yes', 'sailing_school', 'windsurfing_rental', 
-                   'ice_cream', 'internet_cafe', 'clock', 'dentist']
+    # Verificar el tamaño del DataFrame
+    print(f"Tamaño del DataFrame: {df.shape}")
 
-df.loc[:, puntos_interes] = np.nan
+    # Eliminar filas donde 'precio' es NaN, 0, o infinito
+    df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
 
-# Crear la nueva columna 'precio/mt2'
-df['precio/mt2'] = np.where(df['mt2'] != 0, df['precio'] / df['mt2'], np.nan)
-
-# Eliminar las columnas 'precio' y 'mt2'
-df = df.drop(columns=['precio', 'mt2'])
-
-# Eliminar filas donde 'precio/mt2' es NaN, 0, o infinito
-df = df[~df['precio/mt2'].isin([0, np.inf, -np.inf]) & df['precio/mt2'].notna()]
-
-# Separar en DataFrames de alquiler y venta
-df_alquiler = df[df['alquiler_venta'] == 'alquiler'].drop(columns=['alquiler_venta'])
-df_venta = df[df['alquiler_venta'] == 'venta'].drop(columns=['alquiler_venta'])
-
-# Función para realizar regresión
-def realizar_regresion(df):
     # Separar características y variable objetivo
-    X = df.drop('precio/mt2', axis=1)
-    y = df['precio/mt2']
+    X = df.drop('precio', axis=1)
+    y = df['precio']
 
     # Imputar valores NaN en y con la mediana
     y = y.fillna(y.median())
@@ -72,10 +46,15 @@ def realizar_regresion(df):
             ('num', num_transformer, num_cols)
         ])
 
-    # Crear un pipeline para la regresión con RandomForest
+    # Crear pipelines para RandomForest y LinearRegression
     rf_pipeline = Pipeline([
         ('preprocessor', preprocessor),
         ('regressor', RandomForestRegressor(n_estimators=100, random_state=42))
+    ])
+
+    lr_pipeline = Pipeline([
+        ('preprocessor', preprocessor),
+        ('regressor', LinearRegression())
     ])
 
     # Dividir el conjunto de datos en entrenamiento y prueba
@@ -85,13 +64,10 @@ def realizar_regresion(df):
     print(f"Tamaño de X_train: {X_train.shape}")
     print(f"Tamaño de X_test: {X_test.shape}")
 
-    # Entrenar el modelo de RandomForest
+    # Entrenar y evaluar el modelo de RandomForest
     rf_pipeline.fit(X_train, y_train)
-
-    # Realizar predicciones
     y_pred_rf = rf_pipeline.predict(X_test)
 
-    # Evaluar el modelo
     mae_rf = mean_absolute_error(y_test, y_pred_rf)
     mse_rf = mean_squared_error(y_test, y_pred_rf)
     rmse_rf = np.sqrt(mse_rf)
@@ -102,12 +78,30 @@ def realizar_regresion(df):
     print(f'RMSE: {rmse_rf}')
     print(f'R2 Score: {r2_rf}')
 
+    # Entrenar y evaluar el modelo de LinearRegression
+    lr_pipeline.fit(X_train, y_train)
+    y_pred_lr = lr_pipeline.predict(X_test)
+
+    mae_lr = mean_absolute_error(y_test, y_pred_lr)
+    mse_lr = mean_squared_error(y_test, y_pred_lr)
+    rmse_lr = np.sqrt(mse_lr)
+    r2_lr = r2_score(y_test, y_pred_lr)
+
+    print("\nResultados de LinearRegression:")
+    print(f'MAE: {mae_lr}')
+    print(f'RMSE: {rmse_lr}')
+    print(f'R2 Score: {r2_lr}')
+
     # Imprimir algunas predicciones para verificar
     print("\nAlgunas predicciones de RandomForest:")
     for i in range(5):
         print(f"Precio real: {y_test.iloc[i]}, Precio predicho: {y_pred_rf[i]}")
 
-    # Obtener importancia de características
+    print("\nAlgunas predicciones de LinearRegression:")
+    for i in range(5):
+        print(f"Precio real: {y_test.iloc[i]}, Precio predicho: {y_pred_lr[i]}")
+
+    # Obtener importancia de características de RandomForest
     rf_model = rf_pipeline.named_steps['regressor']
     importances = rf_model.feature_importances_
     feature_names = rf_pipeline.named_steps['preprocessor'].get_feature_names_out()
@@ -119,12 +113,13 @@ def realizar_regresion(df):
     print("\nCaracterísticas más importantes de RandomForest:")
     print(importance_df.head(10))
 
-    print("RandomForest completada.")
+    print("Modelos completados.")
 
-# Realizar regresión para df_alquiler
-print("Regresión para Alquiler:")
-realizar_regresion(df_alquiler)
+def main():
+    # Carpeta principal (path relativo en la ubicación local del proyecto)
+    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    machine_learning(script_dir)
 
-# Realizar regresión para df_venta
-print("\nRegresión para Venta:")
-realizar_regresion(df_venta)
+
+if __name__ == "__main__":
+    main()
