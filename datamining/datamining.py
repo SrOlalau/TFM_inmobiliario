@@ -13,7 +13,7 @@ import os
 def machine_learning(script_dir):
 
     # Ruta del archivo CSV
-    file_path =  os.path.join(script_dir, 'datamunging/consolidated_data.csv')
+    file_path =  os.path.join(script_dir, 'datatuning/datatuning.csv')
 
     # Leer el archivo CSV en un DataFrame
     df = pd.read_csv(file_path)
