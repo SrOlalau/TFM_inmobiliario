@@ -21,24 +21,6 @@ def machine_learning(script_dir):
     # Verificar el tamaño del DataFrame
     print(f"Tamaño del DataFrame: {df.shape}")
 
-    # Establecer valores NaN para ciertas columnas
-    puntos_interes = ['cinema', 'restaurant', 'theatre', 'police', 'supermarket',
-                    'pharmacy', 'bar', 'playground', 'cafe', 'monument', 'station',
-                    'clinic', 'post_office', 'convenience', 'sports_centre', 'atm',
-                    'memorial', 'museum', 'artwork', 'bicycle_rental', 'library', 
-                    'waste_disposal', 'platform', 'viewpoint', 'school', 'fuel', 'works', 
-                    'bus_station', 'clothes', 'fire_station', 'college', 'hospital', 
-                    'doctors', 'mall', 'stop_position', 'park', 'prison', 'fast_food', 
-                    'garden', 'marketplace', 'fountain', 'townhall', 'industrial', 
-                    'ferry_terminal', 'public_building', 'place_of_worship', 'bench', 
-                    'drinking_water', 'gym', 'stop_area', 'bird_hide', 'food_court', 'shelter', 
-                    'information', 'stationery', 'farm', 'yoga', 'attraction', 'mobile_library', 
-                    'chalet', 'parking_entrance', 'parking', 'wholesale', 'bakery', 'pub', 
-                    'vending_machine', 'pastry', 'yes', 'sailing_school', 'windsurfing_rental', 
-                    'ice_cream', 'internet_cafe', 'clock', 'dentist']
-
-    df.loc[:, puntos_interes] = np.nan
-
     # Eliminar filas donde 'precio' es NaN, 0, o infinito
     df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
 

@@ -16,4 +16,6 @@ def main(script_dir):
                  'prison','restaurant','school','sports_centre','station','theatre',
                  'townhall','viewpoint','waste_disposal','works']
     
+    df.loc[:, poi_types] = np.nan
+    
     df.to_csv(output_path, index=False)
