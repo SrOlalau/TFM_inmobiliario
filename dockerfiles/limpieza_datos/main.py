@@ -50,6 +50,12 @@ def process_and_insert_data(df, source, target_conn):
     df['alquiler_venta'] = df['tipo']
     df['fecha_extract'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d')
 
+    # Asignar valor a la columna 'origen'
+    if source == "trovit":
+        df['origen'] = df['plataforma']
+    else:
+        df['origen'] = 'pisos.com'
+
     # Determinar las columnas a limpiar según la fuente de datos
     if source == "trovit":
         columns_to_clean = ['precio', 'habitaciones', 'banios', 'mt2', 'publicado_hace', 'planta']
@@ -71,7 +77,6 @@ def process_and_insert_data(df, source, target_conn):
     create_table_if_not_exists(target_conn)
     insert_data_into_db(target_conn, df)
 
-
 def create_table_if_not_exists(conn):
     with conn.cursor() as cur:
         create_table_query = sql.SQL("""
@@ -84,6 +89,10 @@ def create_table_if_not_exists(conn):
                 habitaciones INT,
                 banios INT,
                 mt2 BIGINT,
+                planta TEXT,
+                publicado_hace TEXT,
+                plataforma TEXT,
+                origen TEXT,  -- Nueva columna 'origen'
                 otros TEXT,
                 latitude FLOAT,
                 longitude FLOAT,
