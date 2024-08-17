@@ -256,6 +256,7 @@ def create_table_if_not_exists(conn):
                 habitaciones TEXT,
                 banios TEXT,
                 mt2 TEXT,
+                planta TEXT,  -- Aquí añadimos la columna planta
                 otros TEXT,
                 latitude FLOAT,
                 longitude FLOAT,
@@ -272,10 +273,10 @@ def insert_data_into_db(conn, data):
     with conn.cursor() as cur:
         insert_query = sql.SQL("""
             INSERT INTO scraping_pisos_tabla (
-                precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, otros,
+                precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, planta, otros,
                 latitude, longitude, raw_json, CCAA, tipo, fecha
             ) VALUES (
-                %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s, %(mt2)s, %(otros)s,
+                %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s, %(mt2)s, %(planta)s, %(otros)s,
                 %(latitude)s, %(longitude)s, %(raw_json)s, %(CCAA)s, %(tipo)s, CURRENT_DATE
             )
         """)
