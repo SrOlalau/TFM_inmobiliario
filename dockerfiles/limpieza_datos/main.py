@@ -48,7 +48,7 @@ def validate_and_clean_data(df):
 def process_and_insert_data(df, source, target_conn):
     df['fuente_datos'] = source
     df['alquiler_venta'] = df['tipo']
-    df['fecha_extract'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d')
+    df['fecha_extract'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d', errors='coerce')
 
     # Asignar valor a la columna 'origen'
     if source == "trovit":
@@ -57,10 +57,11 @@ def process_and_insert_data(df, source, target_conn):
         df['origen'] = 'pisos.com'
 
     # Determinar las columnas a limpiar según la fuente de datos
+    columns_to_clean = ['precio', 'habitaciones', 'banios', 'mt2']
     if source == "trovit":
-        columns_to_clean = ['precio', 'habitaciones', 'banios', 'mt2', 'publicado_hace', 'planta']
-    else:
-        columns_to_clean = ['precio', 'habitaciones', 'banios', 'mt2', 'planta']
+        columns_to_clean.extend(['publicado_hace', 'planta'])
+    elif source == "pisos.com":
+        columns_to_clean.append('planta')
 
     # Asegurarse de convertir a texto las columnas numéricas
     for column in columns_to_clean:
@@ -72,7 +73,27 @@ def process_and_insert_data(df, source, target_conn):
     if 'longitude' in df.columns:
         df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
 
-    df = df.drop_duplicates(subset=df.columns.difference(['fecha_extract']))
+    # Eliminar duplicados basándose en la columna href
+    df = df.drop_duplicates(subset=['href'])
+
+    # Asegurar que todas las columnas necesarias existan
+    required_columns = ['precio', 'sub_descr', 'href', 'ubicacion', 'habitaciones', 'banios', 'mt2', 'otros',
+                        'latitude', 'longitude', 'raw_json', 'ccaa', 'fuente_datos', 'alquiler_venta', 'fecha_extract',
+                        'planta', 'publicado_hace', 'plataforma', 'origen']
+    for col in required_columns:
+        if col not in df.columns:
+            df[col] = None
+
+    # Mostrar un resumen del DataFrame resultante
+    print(f"\nResumen del DataFrame para {source}:")
+    print(df.info())
+    print("\nPrimeras 5 filas:")
+    print(df.head())
+    print("\nValores únicos en columnas importantes:")
+    for col in ['origen', 'plataforma', 'planta', 'publicado_hace']:
+        if col in df.columns:
+            print(f"{col}: {df[col].nunique()} valores únicos")
+            print(f"Ejemplos: {df[col].value_counts().head()}")
 
     create_table_if_not_exists(target_conn)
     insert_data_into_db(target_conn, df)
@@ -92,7 +113,7 @@ def create_table_if_not_exists(conn):
                 planta TEXT,
                 publicado_hace TEXT,
                 plataforma TEXT,
-                origen TEXT,  -- Nueva columna 'origen'
+                origen TEXT,
                 otros TEXT,
                 latitude FLOAT,
                 longitude FLOAT,
@@ -106,27 +127,6 @@ def create_table_if_not_exists(conn):
         cur.execute(create_table_query)
         conn.commit()
 
-def clean_nan_values(df):
-    df = df.fillna({
-        'precio': 0,
-        'habitaciones': 0,
-        'banios': 0,
-        'mt2': 0,
-        'latitude': 0.0,
-        'longitude': 0.0
-    })
-    return df
-
-def ensure_correct_types(df):
-    df['precio'] = df['precio'].astype('float64')
-    df['habitaciones'] = df['habitaciones'].astype('float64')
-    df['banios'] = df['banios'].astype('float64')
-    df['mt2'] = df['mt2'].astype('float64')
-    df['latitude'] = df['latitude'].astype('float64')
-    df['longitude'] = df['longitude'].astype('float64')
-    return df
-
-
 def insert_data_into_db(conn, df):
     with conn.cursor() as cur:
         for index, row in df.iterrows():
@@ -134,35 +134,49 @@ def insert_data_into_db(conn, df):
                 # Convertir los valores a texto si son numéricos y manejar None adecuadamente
                 row_data = {}
                 for col, val in row.items():
-                    if val is None or val == "None":
+                    if val is None or pd.isna(val) or val == 'None':
                         row_data[col] = None
+                    elif isinstance(val, (int, float)):
+                        row_data[col] = str(val)
                     else:
-                        row_data[col] = str(val) if isinstance(val, (int, float)) else val
+                        row_data[col] = val
 
-                # Asegurarse de que 'latitude', 'longitude', y 'raw_json' están presentes en row_data
-                if 'latitude' not in row_data:
-                    row_data['latitude'] = None
-                if 'longitude' not in row_data:
-                    row_data['longitude'] = None
-                if 'raw_json' not in row_data:
-                    row_data['raw_json'] = None
+                # Convertir explícitamente ciertos campos a tipos específicos
+                int_fields = ['precio', 'habitaciones', 'banios', 'mt2']
+                for field in int_fields:
+                    if row_data[field] is not None:
+                        try:
+                            row_data[field] = int(float(row_data[field]))
+                        except ValueError:
+                            row_data[field] = None
+
+                float_fields = ['latitude', 'longitude']
+                for field in float_fields:
+                    if row_data[field] is not None:
+                        try:
+                            row_data[field] = float(row_data[field])
+                        except ValueError:
+                            row_data[field] = None
 
                 insert_query = sql.SQL("""
                     INSERT INTO consolidated_data (
-                        precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, otros,
-                        latitude, longitude, raw_json, ccaa, fuente_datos, alquiler_venta, fecha_extract
+                        precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, planta,
+                        publicado_hace, plataforma, origen, otros, latitude, longitude, raw_json,
+                        ccaa, fuente_datos, alquiler_venta, fecha_extract
                     ) VALUES (
-                        %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s, %(mt2)s, %(otros)s,
-                        %(latitude)s, %(longitude)s, %(raw_json)s, %(ccaa)s, %(fuente_datos)s, %(alquiler_venta)s, %(fecha_extract)s
+                        %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s,
+                        %(mt2)s, %(planta)s, %(publicado_hace)s, %(plataforma)s, %(origen)s, %(otros)s,
+                        %(latitude)s, %(longitude)s, %(raw_json)s, %(ccaa)s, %(fuente_datos)s,
+                        %(alquiler_venta)s, %(fecha_extract)s
                     )
                 """)
                 cur.execute(insert_query, row_data)
             except Exception as e:
                 print(f"Error inserting row at index {index}: {row_data}")
                 print(f"Exception: {e}")
-                raise e  # Detener ejecución para investigar
+                conn.rollback()
+                raise e
         conn.commit()
-
 def main():
     # Conexiones a las bases de datos de origen
     conn_pisos = connect_db("scraping_pisos", "pisos", "pisos", "10.1.2.2", "5437")
@@ -173,11 +187,11 @@ def main():
 
     try:
         # Fetch and process data from pisos.com
-        df_pisos = fetch_data_from_db(conn_pisos, "scraping_pisos_tabla")  # Aquí colocas el nombre correcto de la tabla para la base de datos de pisos
+        df_pisos = fetch_data_from_db(conn_pisos, "scraping_pisos_tabla")
         process_and_insert_data(df_pisos, "pisos.com", conn_target)
 
         # Fetch and process data from trovit
-        df_trovit = fetch_data_from_db(conn_trovit, "scraping_trovit_tabla")  # Aquí colocas el nombre correcto de la tabla para la base de datos de trovit
+        df_trovit = fetch_data_from_db(conn_trovit, "scraping_trovit_tabla")
         process_and_insert_data(df_trovit, "trovit", conn_target)
     
     finally:
