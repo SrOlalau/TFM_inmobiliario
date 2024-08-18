@@ -17,7 +17,7 @@ threadpoolctl==3.5.0
 tzdata==2024.1
 urllib3==2.2.2
 plotly-express==0.4.1
-plotly-resampler==0.10.0
 plotly=5.23.0
+plotly-resampler==0.10.0
 ydata-profiling==4.7.0 
 matplotlib==3.7.1
