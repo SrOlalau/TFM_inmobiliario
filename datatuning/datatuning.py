@@ -9,7 +9,7 @@ from sklearn.compose import ColumnTransformer
 def main(script_dir):
     output_path = os.path.join(script_dir, 'datatuning/datatuning.csv')
     origin_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
-    df = pd.read_csv(origin_path)
+    df = pd.read_csv(origin_path, low_memory=False)
     
     # Lista de tipos de POIs
     poi_types = ['aerodrome','atm','bar','bicycle_rental','bus_stop','cafe','cinema',

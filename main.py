@@ -1,11 +1,13 @@
-from web_scraping_scripts import web_scraping_pisos, web_scraping_trovit
-from data.POI import POI_OSM_downloader
-from datamunging import datamunging
-from machinelearning import machinelearning
-from data.geolocations import add_geoloc
-from datatuning import datatuning
-from datatuning import criminalidadtuning
 import os
+
+from data.POI import POI_OSM_downloader
+from data.geolocations import add_geoloc, calculate_POI_distance
+from datamunging import datamunging
+from datatuning import criminalidadtuning
+from datatuning import datatuning
+from machinelearning import machinelearning
+from web_scraping_scripts import web_scraping_pisos, web_scraping_trovit
+
 
 def scraping():
     # Funciones que hacen web scraping
@@ -21,6 +23,7 @@ def preprocesado():
     datamunging.main()
     # Abre bbdd de datamunging y agrega geolocalizacion
     add_geoloc.main()
+    calculate_POI_distance.main()
 
 def criminalidad_tuning():
     # Determine the script directory
