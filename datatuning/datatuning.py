@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from sklearn.impute import KNNImputer
 
 def main(script_dir):
     output_path = os.path.join(script_dir, 'datatuning/datatuning.csv')
@@ -17,5 +18,16 @@ def main(script_dir):
                  'townhall','viewpoint','waste_disposal','works']
     
     df.loc[:, poi_types] = np.nan
-    
+    #funciones desde el EDA
+    df_filtered = df[df['Precio'] != 0]
+    df_filtered = df_filtered.dropna(subset=['Precio'])
+    df = df_filtered
+    df.drop('planta',axis=1)
+    to_factor = list(df.loc[:,df.nunique() < 20])
+    df[to_factor] = df[to_factor].astype('category')
+    imputer = KNNImputer(n_neighbors=3)
+    df_imputed = imputer.fit_transform(df)
+    df_imputed = pd.DataFrame(df_imputed, columns=df.columns)
+    df = df_imputed
+    #____
     df.to_csv(output_path, index=False)
