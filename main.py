@@ -20,9 +20,7 @@ def preprocesado():
     # Junta todos los CSV de datos descargados
     datamunging.main()
     # Abre bbdd de datamunging y agrega geolocalizacion
-    geolocated_data = add_geoloc.main()
-    print(geolocated_data.head())
-    print(geolocated_data.info())
+    add_geoloc.main()
 
 def criminalidad_tuning():
     # Determine the script directory
