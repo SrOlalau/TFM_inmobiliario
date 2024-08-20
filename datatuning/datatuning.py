@@ -19,8 +19,8 @@ def main(script_dir):
     
     df.loc[:, poi_types] = np.nan
     #funciones desde el EDA
-    df_filtered = df[df['Precio'] != 0]
-    df_filtered = df_filtered.dropna(subset=['Precio'])
+    df_filtered = df[df['precio'] != 0]
+    df_filtered = df_filtered.dropna(subset=['precio'])
     df = df_filtered
     df.drop('planta',axis=1)
     to_factor = list(df.loc[:,df.nunique() < 20])
