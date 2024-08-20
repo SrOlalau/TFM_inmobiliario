@@ -229,3 +229,4 @@ def main(script_dir):
     # Renombrar las columnas
     df.columns = ["Region", "Descripcion", "Periodo_2023", "Periodo_2024", "Porcentaje_variacion"]
     df.to_csv(output_path, index=False)
+    print("Hola mundo")
