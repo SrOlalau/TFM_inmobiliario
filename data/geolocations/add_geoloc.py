@@ -94,13 +94,10 @@ def main(output_file_path=None):
     result_df = geocoder.process_and_geocode(df, address_column='ubicacion')
 
     # Si está definido el output_save_path, se guardan los datos como csv, si no, entonces hace un return de los datos
-    if output_file_path:
+    if output_file_path is None:
         # Save the resulting DataFrame to a new CSV file
-        result_df.to_csv(output_file_path, index=False)
-        print(f"Geocoded data saved to {output_file_path}")
-        return None
-
-    return result_df
+        result_df.to_csv(datamunging_path, index=False)
+        print(f"Geocoded data saved to {datamunging_path}")
 
 # Example usage:
 if __name__ == "__main__":
