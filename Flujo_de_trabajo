@@ -1,0 +1,8 @@
+1. Scrapeo de los datos ( Ok en servidor ) | En la carpeta web_scraping_scripts
+2.Limpieza de los datos ( Ok en servidor ) | En la carpeta datamunging
+3.Obtener los datos del POI ( Ok en el servidor ) | 
+4.Tuning de datos de criminalidad ( Pendiente ) | Es el archivo datatuning/criminalidadtuning.py
+5.Data tunning normal ( Pendiente ) | Es el archivo /datatuning/datatuning.py
+6.Añadir geo localizaciones a los datos ¿limpios del scrapeo? sin ellas ( Pendiente ) | Es el archivo /data/geolocations/add_geoloc.py
+7.Calcular las distancias de POI ( Pendiente ) y ademas añadir tambien lo de indices de criminalidad ( extra ) para obtener el dataset final que usaremos para streamline | Es el archivo /data/geolocations/calculate_POI_distance.py , que hay que añadir lo de indices de criminalidad
+8.Ejecutar el machine learning ( Pendiente ) | Es el archivo /machinelearning/machinelearning.py
