@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
+from sklearn.preprocessing import LabelEncoder
 from sklearn.impute import KNNImputer
 
 def main(script_dir):
@@ -25,6 +26,9 @@ def main(script_dir):
     df.drop('planta',axis=1)
     to_factor = list(df.loc[:,df.nunique() < 20])
     df[to_factor] = df[to_factor].astype('category')
+    label_encoder = LabelEncoder()
+    for column in df.select_dtypes(include=['object']).columns:
+        df[column] = label_encoder.fit_transform(df[column])
     imputer = KNNImputer(n_neighbors=3)
     df_imputed = imputer.fit_transform(df)
     df_imputed = pd.DataFrame(df_imputed, columns=df.columns)
