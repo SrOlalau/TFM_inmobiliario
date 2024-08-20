@@ -21,34 +21,12 @@ def machine_learning(script_dir):
     # Verificar el tamaño del DataFrame
     print(f"Tamaño del DataFrame: {df.shape}")
 
-    # Eliminar filas donde 'precio' es NaN, 0, o infinito
-    df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
-
     # Separar características y variable objetivo
     X = df.drop('precio', axis=1)
     y = df['precio']
 
-    # Imputar valores NaN en y con la mediana
-    y = y.fillna(y.median())
-
-    # Identificar columnas numéricas
-    num_cols = X.select_dtypes(include=['int64', 'float64']).columns
-
-    # Preprocesamiento para columnas numéricas
-    num_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='constant', fill_value=0)),
-        ('scaler', StandardScaler())
-    ])
-
-    # Combinar preprocesadores solo para columnas numéricas
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', num_transformer, num_cols)
-        ])
-
     # Crear pipelines para RandomForest y LinearRegression
     rf_pipeline = Pipeline([
-        ('preprocessor', preprocessor),
         ('regressor', RandomForestRegressor(n_estimators=100, random_state=42))
     ])
 

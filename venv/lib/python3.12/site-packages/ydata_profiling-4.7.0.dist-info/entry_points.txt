@@ -1,0 +1,3 @@
+[console_scripts]
+pandas_profiling = ydata_profiling.controller.console:main
+ydata_profiling = ydata_profiling.controller.console:main

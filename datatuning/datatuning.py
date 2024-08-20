@@ -1,8 +1,7 @@
 import os
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import LabelEncoder
-from sklearn.impute import KNNImputer
+from sklearn.impute import SimpleImputer
 
 def main(script_dir):
     output_path = os.path.join(script_dir, 'datatuning/datatuning.csv')
@@ -19,12 +18,24 @@ def main(script_dir):
                  'townhall','viewpoint','waste_disposal','works']
     
     df.loc[:, poi_types] = np.nan
+    
     #funciones desde el EDA
-    df_filtered = df[df['precio'] != 0]
-    df_filtered = df_filtered.dropna(subset=['precio'])
-    df = df_filtered
+    df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
     df =df.drop(['planta','publicado_hace'],axis=1)
+    df = df.fillna(df.median())
     to_factor = list(df.loc[:,df.nunique() < 20])
     df[to_factor] = df[to_factor].astype('category')
+    #funciones que estaban en machinelearning
+    num_cols = df.select_dtypes(include=['int64', 'float64']).columns
+    num_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='constant', fill_value=0)),
+        ('scaler', StandardScaler())
+    ])
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', num_transformer, num_cols)
+        ])
+    rf_pipeline = Pipeline([
+        ('preprocessor', preprocessor)])
     #____
     df.to_csv(output_path, index=False)
