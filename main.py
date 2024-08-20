@@ -4,6 +4,7 @@ from datamunging import datamunging
 from machinelearning import machinelearning
 from data.geolocations import add_geoloc
 from datatuning import datatuning
+from datatuning import criminalidadtuning
 import os
 
 def scraping():
@@ -23,7 +24,10 @@ def preprocesado():
     print(geolocated_data.head())
     print(geolocated_data.info())
 
-
+def criminalidad_tuning():
+    # Determine the script directory
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    criminalidadtuning.main(script_dir)
 
 def data_tuning():
     # Determine the script directory
@@ -41,6 +45,9 @@ if __name__ == '__main__':
 
     # Luego hace web scraping de los nuevos anuncios publicados en la última semana
     #scraping()
+
+    #Tuning de indices de criminalidad
+    criminalidad_tuning()
 
     # Después de hacer el scrpaping diario, vuelve a juntar todos los csv y ejecuta datamunging
     preprocesado()
