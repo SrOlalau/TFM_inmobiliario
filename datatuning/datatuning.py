@@ -23,15 +23,8 @@ def main(script_dir):
     df_filtered = df[df['precio'] != 0]
     df_filtered = df_filtered.dropna(subset=['precio'])
     df = df_filtered
-    df.drop('planta',axis=1)
+    df =df.drop(['planta','publicado_hace'],axis=1)
     to_factor = list(df.loc[:,df.nunique() < 20])
     df[to_factor] = df[to_factor].astype('category')
-    label_encoder = LabelEncoder()
-    for column in df.select_dtypes(include=['object']).columns:
-        df[column] = label_encoder.fit_transform(df[column])
-    imputer = KNNImputer(n_neighbors=3)
-    df_imputed = imputer.fit_transform(df)
-    df_imputed = pd.DataFrame(df_imputed, columns=df.columns)
-    df = df_imputed
     #____
     df.to_csv(output_path, index=False)
