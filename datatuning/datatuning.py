@@ -2,6 +2,9 @@ import os
 import pandas as pd
 import numpy as np
 from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.compose import ColumnTransformer
 
 def main(script_dir):
     output_path = os.path.join(script_dir, 'datatuning/datatuning.csv')
@@ -21,21 +24,15 @@ def main(script_dir):
     
     #funciones desde el EDA
     df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
-    df =df.drop(['planta','publicado_hace'],axis=1)
-    df = df.fillna(df.median())
-    to_factor = list(df.loc[:,df.nunique() < 20])
-    df[to_factor] = df[to_factor].astype('category')
-    #funciones que estaban en machinelearning
     num_cols = df.select_dtypes(include=['int64', 'float64']).columns
-    num_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='constant', fill_value=0)),
-        ('scaler', StandardScaler())
-    ])
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', num_transformer, num_cols)
-        ])
-    rf_pipeline = Pipeline([
-        ('preprocessor', preprocessor)])
+    imputer = SimpleImputer(strategy='constant', fill_value=0)
+    df[num_cols] = imputer.fit_transform(df[num_cols])
+    scaler = StandardScaler()
+    df[num_cols] = scaler.fit_transform(df[num_cols])
+    df =df.drop(['planta','publicado_hace'],axis=1)
+    #df = df.fillna(df.median())
+    #to_factor = list(df.loc[:,df.nunique() < 20])
+    #df[to_factor] = df[to_factor].astype('category')
+    df = df.select_dtypes(include=['int64', 'float64'])
     #____
     df.to_csv(output_path, index=False)

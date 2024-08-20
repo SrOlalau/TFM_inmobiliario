@@ -1,10 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
@@ -20,7 +17,6 @@ def machine_learning(script_dir):
 
     # Verificar el tamaño del DataFrame
     print(f"Tamaño del DataFrame: {df.shape}")
-
     # Separar características y variable objetivo
     X = df.drop('precio', axis=1)
     y = df['precio']
@@ -31,12 +27,11 @@ def machine_learning(script_dir):
     ])
 
     lr_pipeline = Pipeline([
-        ('preprocessor', preprocessor),
         ('regressor', LinearRegression())
     ])
 
     # Dividir el conjunto de datos en entrenamiento y prueba
-    X_train, X_test, y_train, y_test = train_test_split(X[num_cols], y, test_size=0.2, random_state=42)
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Verificar tamaños de conjuntos de entrenamiento y prueba
     print(f"Tamaño de X_train: {X_train.shape}")
@@ -82,7 +77,11 @@ def machine_learning(script_dir):
     # Obtener importancia de características de RandomForest
     rf_model = rf_pipeline.named_steps['regressor']
     importances = rf_model.feature_importances_
-    feature_names = rf_pipeline.named_steps['preprocessor'].get_feature_names_out()
+    feature_names = X.columns
+
+    # Mostrar la importancia de cada característica
+    for name, importance in zip(feature_names, importances):
+        print(f"{name}: {importance}")
 
     # Crear un DataFrame con la importancia de características
     importance_df = pd.DataFrame({'feature': feature_names, 'importance': importances})
