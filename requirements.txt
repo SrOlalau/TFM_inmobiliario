@@ -21,3 +21,4 @@ plotly==5.23.0
 plotly-resampler==0.10.0
 ydata-profiling==4.7.0 
 matplotlib==3.7.1
+streamlit==1.37.1
