@@ -1,7 +1,7 @@
 from web_scraping_scripts import web_scraping_pisos, web_scraping_trovit
 from data.POI import POI_OSM_downloader
 from datamunging import datamunging
-from datamining import datamining
+from machinelearning import machinelearning
 from data.geolocations import add_geoloc
 from datatuning import datatuning
 import os
@@ -33,7 +33,7 @@ def data_tuning():
 
 def machine_learning ():
     # Modelos de predicción de variable objetivo
-    datamining.main()
+    machinelearning.main()
 
 if __name__ == '__main__':
     # Primero descarga puntos de interés
