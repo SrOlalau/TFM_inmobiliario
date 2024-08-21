@@ -7,6 +7,7 @@ from datatuning import criminalidadtuning
 from machinelearning import machinelearning
 from web_scraping_scripts import web_scraping_pisos, web_scraping_trovit
 from datetime import datetime
+import time
 
 def scraping():
     # Funciones que hacen web scraping
@@ -30,11 +31,14 @@ def criminalidad_tuning():
     criminalidadtuning.main(script_dir)
 
 def machine_learning ():
+    start_time = time.time()
     # Modelos de predicción de variable objetivo
     machinelearning.main()
+    end_time = time.time()
+    print(f"MachineLearning time: {(end_time - start_time) / 60:.2f} minutes")
 
 if __name__ == '__main__':
-    print(f'inicio ejecución: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}')
+    
     # Primero descarga puntos de interés
     #descarga_info_adicional()
 
@@ -42,11 +46,9 @@ if __name__ == '__main__':
     #scraping()
 
     #Tuning de indices de criminalidad
-    criminalidad_tuning()
+    #criminalidad_tuning()
 
     # Después de hacer el scrpaping diario, vuelve a juntar todos los csv y ejecuta datamunging
     preprocesado()
     machine_learning()
-    print(f'término ejecución: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}')
-
-
+    

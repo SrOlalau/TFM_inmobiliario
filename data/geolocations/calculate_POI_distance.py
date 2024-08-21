@@ -157,7 +157,7 @@ def main(output_file_path=None):
     # Select the types you want to setup for the calculus
     selected_types = ['aerodrome', 'restaurant']  # Replace with actual types
     # poi_counter.set_poi_types(selected_types) # Comentado para que realice el cálculo para todos los tipos
-    radii = [0.25, 0.5, 1, 3]
+    radii = [1, 3, 5]
     poi_counter.set_radii(radii)
 
     # Set up closest POI calculation
