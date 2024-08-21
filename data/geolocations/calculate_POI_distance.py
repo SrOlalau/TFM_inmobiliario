@@ -13,7 +13,7 @@ class POI_counter:
     def __init__(self, poi_path):
         self.poi_df = pd.read_csv(poi_path)
         self.filtered_poi_df = self._filter_poi_types()
-        self.poi_types = self.filtered_poi_df['type'].unique()
+        self.poi_types = self.filtered_poi_df['type'].dropna().unique()
         self.selected_types = self.poi_types
         self.radii = [1]  # Default radius
         self.df_coords = None
@@ -57,9 +57,12 @@ class POI_counter:
             delayed(POI_counter._count_pois_within_radius)(center, pois, radius) for center in centers)
 
     def set_closest_types(self, types):
-        if not set(types).issubset(self.poi_types):
-            raise ValueError("Some of the provided types are not valid.")
-        self.closest_types = types
+        if types == 'all':
+            self.closest_types = self.selected_types
+        else:
+            if not set(types).issubset(self.poi_types):
+                raise ValueError("Some of the provided types are not valid.")
+            self.closest_types = types
 
     @staticmethod
     def _find_closest_poi(center, pois):
@@ -119,10 +122,13 @@ class POI_counter:
             col_name = f'closest_{poi_type}'
             new_columns[col_name] = pd.Series(closest_distances, index=result_df.index[~self.na_mask])
 
-        # Combine all new columns at once
-        for col_name, series in new_columns.items():
-            result_df.loc[:, col_name] = np.nan
-            result_df.loc[~self.na_mask, col_name] = series
+        # Convert new_columns dictionary to DataFrame and join to result_df
+        new_columns_df = pd.DataFrame(new_columns)
+        result_df = pd.concat([result_df, new_columns_df], axis=1)
+
+        # Handle NaN values
+        for col in new_columns_df.columns:
+            result_df.loc[self.na_mask, col] = np.nan
 
         end_time = time.time()
         print(f"Total execution time: {(end_time - start_time) / 60:.2f} minutes")
@@ -155,8 +161,8 @@ def main(output_file_path=None):
     poi_counter.set_radii(radii)
 
     # Set up closest POI calculation
-    closest_types = ['aerodrome', 'mall', 'cinema']
-    poi_counter.set_closest_types(closest_types)
+    closest_types = ['aerodrome', 'mall', 'cinema', 'hospital', 'park', ]
+    poi_counter.set_closest_types('all')
 
     df = pd.read_csv(data_path, low_memory=False)
 
