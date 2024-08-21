@@ -11,17 +11,6 @@ def main(script_dir):
     origin_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
     df = pd.read_csv(origin_path, low_memory=False)
     
-    # Lista de tipos de POIs
-    poi_types = ['aerodrome','atm','bar','bicycle_rental','bus_stop','cafe','cinema',
-                 'clinic','clothes','college','convenience','doctors','factory',
-                 'fire_station','garden','gym','hospital','health','industrial',
-                 'landfill','library','mall','marketplace','memorial','monument',
-                 'museum','park','pharmacy','playground','police','post_office',
-                 'prison','restaurant','school','sports_centre','station','theatre',
-                 'townhall','viewpoint','waste_disposal','works']
-    
-    df.loc[:, poi_types] = np.nan
-    
     #funciones desde el EDA
     df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
     num_cols = df.select_dtypes(include=['int64', 'float64']).columns
