@@ -10,10 +10,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
 import os
 
-def convert_to_numeric(column):
-    # Intenta convertir a numérico, si falla, convierte a NaN
-    return pd.to_numeric(column, errors='coerce')
-
 def machine_learning(script_dir):
     # Ruta del archivo CSV
     file_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
@@ -23,18 +19,13 @@ def machine_learning(script_dir):
     # Verificar el tamaño del DataFrame
     print(f"Tamaño del DataFrame: {df.shape}")
 
-    for col in df.columns:
-        if df[col].dtype == 'object':
-            df[col] = convert_to_numeric(df[col])
-
     # Eliminar filas donde 'precio' es NaN, 0, o infinito
     df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
-    df = df[~df['mt2'].isin([0, np.inf, -np.inf]) & df['mt2'].notna()]
-    #df = df.drop(['planta', 'publicado_hace'], axis=1)
+    df = df.drop(['planta', 'publicado_hace'], axis=1)
     
     # Separar características y variable objetivo
     df['p/mt2'] = df['precio'] / df['mt2']
-    X = df.drop(['precio','p/mt2'], axis=1)
+    X = df.drop(['precio'], axis=1)
     y = df['p/mt2']
 
     # Identificar columnas numéricas
@@ -80,17 +71,10 @@ def machine_learning(script_dir):
 
     ## Evaluación con filtrado de variables
     # Filtrar filas donde 'latitude' o 'longitude' no sean NaN en el conjunto de prueba
-    valid_indices_alquiler = (~X_test[['latitude', 'longitude']].isna().any(axis=1)) & (X_test['alquiler_venta'] == 'alquiler')
-    y_test_filtered_alquiler = y_test.iloc[valid_indices_alquiler]
-    y_pred_rf_filtered_alquiler = y_pred_rf[valid_indices_alquiler]
-    y_pred_lr_filtered_alquiler = y_pred_lr[valid_indices_alquiler]
-
-    ## Evaluación con filtrado de variables
-    # Filtrar filas donde 'latitude' o 'longitude' no sean NaN en el conjunto de prueba
-    valid_indices_venta = (~X_test[['latitude', 'longitude']].isna().any(axis=1)) & (X_test['alquiler_venta'] == 'venta')
-    y_test_filtered_venta = y_test.iloc[valid_indices_venta]
-    y_pred_rf_filtered_venta = y_pred_rf[valid_indices_venta]
-    y_pred_lr_filtered_venta = y_pred_lr[valid_indices_venta]
+    valid_indices = np.where(~X_test[['latitude', 'longitude']].isna().any(axis=1))[0]
+    y_test_filtered = y_test.iloc[valid_indices]
+    y_pred_rf_filtered = y_pred_rf[valid_indices]
+    y_pred_lr_filtered = y_pred_lr[valid_indices]
 
     # Métricas para LinearRegression
     mae_lr_full = mean_absolute_error(y_test, y_pred_lr)
@@ -103,24 +87,14 @@ def machine_learning(script_dir):
     print(f'R2 Score: {r2_lr_full}')
 
     # Métricas para LinearRegression usando solo las filas filtradas
-    mae_lr_filtered_alquiler = mean_absolute_error(y_test_filtered_alquiler, y_pred_lr_filtered_alquiler)
-    mse_lr_filtered_alquiler = mean_squared_error(y_test_filtered_alquiler, y_pred_lr_filtered_alquiler)
-    rmse_lr_filtered_alquiler = np.sqrt(mse_lr_filtered_alquiler)
-    r2_lr_filtered_alquiler = r2_score(y_test_filtered_alquiler, y_pred_lr_filtered_alquiler)
+    mae_lr_filtered = mean_absolute_error(y_test_filtered, y_pred_lr_filtered)
+    mse_lr_filtered = mean_squared_error(y_test_filtered, y_pred_lr_filtered)
+    rmse_lr_filtered = np.sqrt(mse_lr_filtered)
+    r2_lr_filtered = r2_score(y_test_filtered, y_pred_lr_filtered)
     print("\nResultados de LinearRegression (filtrados lat y lon no son Nan):")
-    print(f'MAE: {mae_lr_filtered_alquiler}')
-    print(f'RMSE: {rmse_lr_filtered_alquiler}')
-    print(f'R2 Score: {r2_lr_filtered_alquiler}')
-
-    # Métricas para LinearRegression usando solo las filas filtradas
-    mae_lr_filtered_venta = mean_absolute_error(y_test_filtered_venta, y_pred_lr_filtered_venta)
-    mse_lr_filtered_venta = mean_squared_error(y_test_filtered_venta, y_pred_lr_filtered_venta)
-    rmse_lr_filtered_venta = np.sqrt(mse_lr_filtered_venta)
-    r2_lr_filtered_venta = r2_score(y_test_filtered_venta, y_pred_lr_filtered_venta)
-    print("\nResultados de LinearRegression (filtrados lat y lon no son Nan):")
-    print(f'MAE: {mae_lr_filtered_venta}')
-    print(f'RMSE: {rmse_lr_filtered_venta}')
-    print(f'R2 Score: {r2_lr_filtered_venta}')
+    print(f'MAE: {mae_lr_filtered}')
+    print(f'RMSE: {rmse_lr_filtered}')
+    print(f'R2 Score: {r2_lr_filtered}')
 
     ## Evaluación sin filtrar variables (resultados completos)
     # Métricas para RandomForest
@@ -134,40 +108,22 @@ def machine_learning(script_dir):
     print(f'R2 Score: {r2_rf_full}')
 
     # Métricas para RandomForest usando solo las filas filtradas
-    mae_rf_filtered_alquiler = mean_absolute_error(y_test_filtered_alquiler, y_pred_rf_filtered_alquiler)
-    mse_rf_filtered_alquiler = mean_squared_error(y_test_filtered_alquiler, y_pred_rf_filtered_alquiler)
-    rmse_rf_filtered_alquiler = np.sqrt(mse_rf_filtered_alquiler)
-    r2_rf_filtered_alquiler = r2_score(y_test_filtered_alquiler, y_pred_rf_filtered_alquiler)
+    mae_rf_filtered = mean_absolute_error(y_test_filtered, y_pred_rf_filtered)
+    mse_rf_filtered = mean_squared_error(y_test_filtered, y_pred_rf_filtered)
+    rmse_rf_filtered = np.sqrt(mse_rf_filtered)
+    r2_rf_filtered = r2_score(y_test_filtered, y_pred_rf_filtered)
     print("\nResultados de RandomForest (filtrados lat y lon no son Nan):")
-    print(f'MAE: {mae_rf_filtered_alquiler}')
-    print(f'RMSE: {rmse_rf_filtered_alquiler}')
-    print(f'R2 Score: {r2_rf_filtered_alquiler}')
-
-    # Métricas para RandomForest usando solo las filas filtradas
-    mae_rf_filtered_venta = mean_absolute_error(y_test_filtered_venta, y_pred_rf_filtered_venta)
-    mse_rf_filtered_venta = mean_squared_error(y_test_filtered_venta, y_pred_rf_filtered_venta)
-    rmse_rf_filtered_venta = np.sqrt(mse_rf_filtered_venta)
-    r2_rf_filtered_venta = r2_score(y_test_filtered_venta, y_pred_rf_filtered_venta)
-    print("\nResultados de RandomForest (filtrados lat y lon no son Nan):")
-    print(f'MAE: {mae_rf_filtered_venta}')
-    print(f'RMSE: {rmse_rf_filtered_venta}')
-    print(f'R2 Score: {r2_rf_filtered_venta}')
+    print(f'MAE: {mae_rf_filtered}')
+    print(f'RMSE: {rmse_rf_filtered}')
+    print(f'R2 Score: {r2_rf_filtered}')
 
     # Imprimir algunas predicciones filtradas para verificar
-    print("\nAlgunas predicciones de RandomForest (filtrados alquiler):")
-    for i in range(min(5, len(valid_indices_alquiler))):
-        print(f"Precio real: {y_test_filtered_alquiler.iloc[i]}, Precio predicho: {y_pred_rf_filtered_alquiler[i]}")
-    print("\nAlgunas predicciones de LinearRegression (filtrados alquiler):")
-    for i in range(min(5, len(valid_indices_alquiler))):
-        print(f"Precio real: {y_test_filtered_alquiler.iloc[i]}, Precio predicho: {y_pred_lr_filtered_alquiler[i]}")
-
-    # Imprimir algunas predicciones filtradas para verificar
-    print("\nAlgunas predicciones de RandomForest (filtrados venta):")
-    for i in range(min(5, len(valid_indices_venta))):
-        print(f"Precio real: {y_test_filtered_venta.iloc[i]}, Precio predicho: {y_pred_rf_filtered_venta[i]}")
-    print("\nAlgunas predicciones de LinearRegression (filtrados venta):")
-    for i in range(min(5, len(valid_indices_venta))):
-        print(f"Precio real: {y_test_filtered_venta.iloc[i]}, Precio predicho: {y_pred_lr_filtered_venta[i]}")
+    print("\nAlgunas predicciones de RandomForest (filtrados):")
+    for i in range(min(5, len(valid_indices))):
+        print(f"Precio real: {y_test_filtered.iloc[i]}, Precio predicho: {y_pred_rf_filtered[i]}")
+    print("\nAlgunas predicciones de LinearRegression (filtrados):")
+    for i in range(min(5, len(valid_indices))):
+        print(f"Precio real: {y_test_filtered.iloc[i]}, Precio predicho: {y_pred_lr_filtered[i]}")
 
     # Obtener importancia de características de RandomForest
     rf_model = rf_pipeline.named_steps['regressor']

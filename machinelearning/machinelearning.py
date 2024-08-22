@@ -95,16 +95,6 @@ def machine_learning(script_dir):
     print(f'RMSE: {rmse_lr_filtered}')
     print(f'R2 Score: {r2_lr_filtered}')
 
-    # Métricas para RandomForest usando solo las filas filtradas
-    mae_rf_filtered = mean_absolute_error(y_test_filtered, y_pred_rf_filtered)
-    mse_rf_filtered = mean_squared_error(y_test_filtered, y_pred_rf_filtered)
-    rmse_rf_filtered = np.sqrt(mse_rf_filtered)
-    r2_rf_filtered = r2_score(y_test_filtered, y_pred_rf_filtered)
-    print("\nResultados de RandomForest (filtrados lat y lon no son Nan):")
-    print(f'MAE: {mae_rf_filtered}')
-    print(f'RMSE: {rmse_rf_filtered}')
-    print(f'R2 Score: {r2_rf_filtered}')
-
     ## Evaluación sin filtrar variables (resultados completos)
     # Métricas para RandomForest
     mae_rf_full = mean_absolute_error(y_test, y_pred_rf)
@@ -115,6 +105,16 @@ def machine_learning(script_dir):
     print(f'MAE: {mae_rf_full}')
     print(f'RMSE: {rmse_rf_full}')
     print(f'R2 Score: {r2_rf_full}')
+
+    # Métricas para RandomForest usando solo las filas filtradas
+    mae_rf_filtered = mean_absolute_error(y_test_filtered, y_pred_rf_filtered)
+    mse_rf_filtered = mean_squared_error(y_test_filtered, y_pred_rf_filtered)
+    rmse_rf_filtered = np.sqrt(mse_rf_filtered)
+    r2_rf_filtered = r2_score(y_test_filtered, y_pred_rf_filtered)
+    print("\nResultados de RandomForest (filtrados lat y lon no son Nan):")
+    print(f'MAE: {mae_rf_filtered}')
+    print(f'RMSE: {rmse_rf_filtered}')
+    print(f'R2 Score: {r2_rf_filtered}')
 
     # Imprimir algunas predicciones filtradas para verificar
     print("\nAlgunas predicciones de RandomForest (filtrados):")

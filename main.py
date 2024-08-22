@@ -37,7 +37,6 @@ def machine_learning ():
     start_time = time.time()
     # Modelos de predicción de variable objetivo
     machinelearning.main()
-    #machinelearning_pxm2.main()
     end_time = time.time()
     print(f"MachineLearning time: {(end_time - start_time) / 60:.2f} minutes")
 
