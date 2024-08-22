@@ -21,10 +21,11 @@ def machine_learning(script_dir):
 
     # Eliminar filas donde 'precio' es NaN, 0, o infinito
     df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
+    df = df[~df['mt2'].isin([0, np.inf, -np.inf]) & df['mt2'].notna()]
     df = df.drop(['planta', 'publicado_hace'], axis=1)
     
     # Separar características y variable objetivo
-    X = df.drop('precio', axis=1)
+    X = df.drop(['precio'], axis=1)
     y = df['precio']
 
     # Identificar columnas numéricas

@@ -4,7 +4,7 @@ from data.POI import POI_OSM_downloader
 from data.geolocations import add_geoloc, calculate_POI_distance
 from datamunging import datamunging
 from datatuning import criminalidadtuning
-from machinelearning import machinelearning, machinelearning_pxm2
+from machinelearning import machinelearning
 from web_scraping_scripts import web_scraping_pisos, web_scraping_trovit
 from datetime import datetime
 import time
