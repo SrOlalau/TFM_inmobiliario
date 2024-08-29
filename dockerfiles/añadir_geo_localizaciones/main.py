@@ -7,6 +7,17 @@ import re
 import pgeocode
 from fuzzywuzzy import fuzz
 import psycopg2
+from psycopg2 import sql
+
+def connect_db(db_name, db_user, db_password, db_host, db_port):
+    conn = psycopg2.connect(
+        dbname=db_name,
+        user=db_user,
+        password=db_password,
+        host=db_host,
+        port=db_port
+    )
+    return conn
 
 class GeocoderCache:
     def __init__(self, cache_file):
@@ -63,7 +74,6 @@ class GeocoderCache:
             return None, None, True
 
     def process_and_geocode(self, df, address_column='ubicacion'):
-        # Filter for rows where latitude or longitude is NA
         mask = df['latitude'].isna() | df['longitude'].isna()
         addresses_to_geocode = df.loc[mask, address_column].dropna().unique()
 
@@ -71,7 +81,6 @@ class GeocoderCache:
             lat, lon, request_made = self.get_coordinates(address)
 
             if lat is not None and lon is not None:
-                # Update the DataFrame in-place
                 df.loc[(df[address_column] == address) & mask, 'latitude'] = float(lat)
                 df.loc[(df[address_column] == address) & mask, 'longitude'] = float(lon)
             else:
@@ -85,14 +94,10 @@ class GeocoderCache:
         return df
 
     def filter_and_geocode_errors(self, error_addresses, df, address_column='ubicacion'):
-        # Regular expression to match 5 digits followed by a comma
         postal_code_regex = re.compile(r'^(\d{5}),')
-
-        # List to hold postal codes
         postal_codes = []
         address_map = {}
 
-        # Filter and extract postal codes
         for address in error_addresses:
             if address and isinstance(address, str):
                 match = postal_code_regex.match(address)
@@ -103,18 +108,15 @@ class GeocoderCache:
             else:
                 print(f"Skipping invalid address: {address}")
 
-        # Query pgeocode for the postal codes
         nomi = pgeocode.Nominatim('es')
         results = nomi.query_postal_code(postal_codes)
 
-        # Update the cache and DataFrame with the results
         for i, result in results.iterrows():
             if not pd.isna(result['latitude']) and not pd.isna(result['longitude']):
                 postal_code = result['postal_code']
                 lat, lon = result['latitude'], result['longitude']
                 original_address = address_map[postal_code]
 
-                # Extract relevant fields for fuzzy matching
                 relevant_fields = [
                     result['place_name'],
                     result['state_name'],
@@ -122,20 +124,17 @@ class GeocoderCache:
                     result['county_name']
                 ]
 
-                # Extract the text part of the original address (after postal code)
                 address_text = postal_code_regex.sub('', original_address).strip().lower()
 
-                # Perform fuzzy matching
                 valid_match = False
                 for field in relevant_fields:
-                    if pd.notna(field):  # Ensure the field is not NaN
+                    if pd.notna(field):
                         field = field.lower()
                         score = fuzz.token_set_ratio(field, address_text)
                         if score >= 97:
                             valid_match = True
                             break
 
-                # If a valid match is found, update cache and DataFrame
                 if valid_match:
                     self.cache[original_address] = (lat, lon)
                     df.loc[(df[address_column] == original_address), 'latitude'] = float(lat)
@@ -143,89 +142,117 @@ class GeocoderCache:
                 else:
                     print(f"No valid match found for {original_address} with postal code {postal_code}. Skipping.")
 
-        # Save cache after updates
         self.save_cache()
-
         return df
 
-def connect_db(db_name, db_user, db_password, db_host, db_port):
-    conn = psycopg2.connect(
-        dbname=db_name,
-        user=db_user,
-        password=db_password,
-        host=db_host,
-        port=db_port
-    )
-    return conn
+def create_table_if_not_exists(conn, table_name):
+    with conn.cursor() as cur:
+        cur.execute("""
+        SELECT EXISTS (
+            SELECT FROM information_schema.tables 
+            WHERE table_name = %s
+        );
+        """, (table_name,))
+        table_exists = cur.fetchone()[0]
 
-def load_data_from_db(conn, table_name):
-    query = f"SELECT * FROM {table_name};"
-    df = pd.read_sql(query, conn)
-    return df
+        if not table_exists:
+            cur.execute(sql.SQL("""
+            CREATE TABLE {} (
+                id integer,
+                precio bigint,
+                sub_descr text,
+                href text,
+                ubicacion text,
+                habitaciones integer,
+                banios integer,
+                m2 bigint,
+                planta text,
+                publicado_hace text,
+                plataforma text,
+                origen text,
+                otros text,
+                latitude double precision,
+                longitude double precision,
+                raw_json text,
+                ccaa text,
+                fuente_datos text,
+                alquiler_venta text,
+                fecha_extract date,
+                geocoding_error text
+            )
+            """).format(sql.Identifier(table_name)))
+            conn.commit()
 
-def check_and_create_table(conn, new_table_name, original_table_name):
-    cursor = conn.cursor()
-    
-    # Check if table exists
-    cursor.execute(f"SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name='{new_table_name}');")
-    exists = cursor.fetchone()[0]
-    
-    if not exists:
-        # Create table
-        cursor.execute(f"""
-        CREATE TABLE {new_table_name} AS 
-        TABLE {original_table_name} WITH NO DATA;
-        """)
-        
-        # Add geocoding_error column
-        cursor.execute(f"ALTER TABLE {new_table_name} ADD COLUMN geocoding_error TEXT;")
-        conn.commit()
-        print(f"Table {new_table_name} created.")
-    else:
-        print(f"Table {new_table_name} already exists.")
-        
-def save_data_to_db(conn, df, new_table_name):
-    cursor = conn.cursor()
-    
-    # Insert or update data
-    for _, row in df.iterrows():
-        cursor.execute(f"""
-        INSERT INTO {new_table_name} VALUES ({', '.join(['%s'] * len(row))})
-        ON CONFLICT (id) DO UPDATE SET
-        {', '.join([f"{col} = EXCLUDED.{col}" for col in df.columns])};
-        """, tuple(row))
-    
-    conn.commit()
+def process_batch(batch_df, geocoder, conn_target, table_name):
+    # Process and geocode the batch
+    result_df = geocoder.process_and_geocode(batch_df, address_column='ubicacion')
 
-def main():
-    conn_source = connect_db("datos_limpios", "datos_limpios", "datos_limpios", "10.1.2.2", "5439")
-    conn_target = connect_db("geoloc", "geoloc", "geoloc", "10.1.2.2", "5441")
-    
-    original_table_name = "consolidated_data"
-    new_table_name = "tabla_geocodificada"
-
-    # Cargar los datos desde la base de datos original
-    df = load_data_from_db(conn_source, original_table_name)
-
-    # Procesar y geocodificar los datos
-    geocoder = GeocoderCache(cache_file="geocode_cache.json")
-    result_df = geocoder.process_and_geocode(df, address_column='ubicacion')
-    
-    # Identificar errores y tratar de corregir
+    # Identify addresses with errors in geocoding
     error_mask = result_df['latitude'].isna() | result_df['longitude'].isna() | result_df['geocoding_error'].notna()
     error_addresses = result_df.loc[error_mask, 'ubicacion'].unique()
+
+    # Filter and geocode these error addresses using the pgeocode library
     if len(error_addresses) > 0:
         result_df = geocoder.filter_and_geocode_errors(error_addresses, result_df, address_column='ubicacion')
 
-    # Verificar y crear la tabla en la base de datos destino
-    check_and_create_table(conn_target, new_table_name, original_table_name)
+    # Insert data into target database
+    with conn_target.cursor() as cur:
+        for _, row in result_df.iterrows():
+            cur.execute(sql.SQL("""
+            INSERT INTO {} (
+                id, precio, sub_descr, href, ubicacion, habitaciones, banios, m2, planta,
+                publicado_hace, plataforma, origen, otros, latitude, longitude, raw_json,
+                ccaa, fuente_datos, alquiler_venta, fecha_extract, geocoding_error
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            """).format(sql.Identifier(table_name)), tuple(row))
 
-    # Guardar los datos procesados en la nueva base de datos
-    save_data_to_db(conn_target, result_df, new_table_name)
+    conn_target.commit()
+    print(f"Processed and inserted batch of {len(result_df)} rows")
 
-    # Cerrar las conexiones a la base de datos
+def main():
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    cache_path = os.path.join(script_dir, 'geocode_cache.json')
+    geocoder = GeocoderCache(cache_file=cache_path)
+
+    # Connect to source and target databases
+    conn_source = connect_db("datos_limpios", "datos_limpios", "datos_limpios", "10.1.2.2", "5439")
+    conn_target = connect_db("geoloc", "geoloc", "geoloc", "10.1.2.2", "5441")
+
+    original_table_name = "consolidated_data"
+    new_table_name = "tabla_geocodificada"
+
+    # Create table in target database if it doesn't exist
+    create_table_if_not_exists(conn_target, new_table_name)
+
+    # Process data in batches
+    batch_size = 1000
+    offset = 0
+
+    while True:
+        # Read data from source database in batches
+        with conn_source.cursor() as cur:
+            cur.execute(sql.SQL("""
+                SELECT * FROM {} 
+                ORDER BY id
+                LIMIT %s OFFSET %s
+            """).format(sql.Identifier(original_table_name)), (batch_size, offset))
+            columns = [desc[0] for desc in cur.description]
+            data = cur.fetchall()
+
+        if not data:
+            break  # No more data to process
+
+        batch_df = pd.DataFrame(data, columns=columns)
+        process_batch(batch_df, geocoder, conn_target, new_table_name)
+
+        offset += batch_size
+        print(f"Processed {offset} rows so far")
+
+    # Close database connections
     conn_source.close()
     conn_target.close()
+
+    print("Geocoding process completed and all data saved to target database.")
 
 if __name__ == "__main__":
     main()
