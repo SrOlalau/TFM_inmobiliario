@@ -74,6 +74,13 @@ class GeocoderCache:
             return None, None, True
 
     def process_and_geocode(self, df, address_column='ubicacion'):
+        if 'latitude' not in df.columns:
+            df['latitude'] = pd.NA
+        if 'longitude' not in df.columns:
+            df['longitude'] = pd.NA
+        if 'geocoding_error' not in df.columns:
+            df['geocoding_error'] = pd.NA
+
         mask = df['latitude'].isna() | df['longitude'].isna()
         addresses_to_geocode = df.loc[mask, address_column].dropna().unique()
 
@@ -83,6 +90,7 @@ class GeocoderCache:
             if lat is not None and lon is not None:
                 df.loc[(df[address_column] == address) & mask, 'latitude'] = float(lat)
                 df.loc[(df[address_column] == address) & mask, 'longitude'] = float(lon)
+                df.loc[(df[address_column] == address) & mask, 'geocoding_error'] = pd.NA
             else:
                 error = self.cache[address].get('error') if isinstance(self.cache[address], dict) else None
                 df.loc[(df[address_column] == address) & mask, 'geocoding_error'] = error
@@ -139,6 +147,7 @@ class GeocoderCache:
                     self.cache[original_address] = (lat, lon)
                     df.loc[(df[address_column] == original_address), 'latitude'] = float(lat)
                     df.loc[(df[address_column] == original_address), 'longitude'] = float(lon)
+                    df.loc[(df[address_column] == original_address), 'geocoding_error'] = pd.NA
                 else:
                     print(f"No valid match found for {original_address} with postal code {postal_code}. Skipping.")
 
