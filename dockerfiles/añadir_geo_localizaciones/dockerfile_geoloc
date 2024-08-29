@@ -10,6 +10,8 @@ COPY ./dockerfiles/añadir_geo_localizaciones/requisitos.txt /app/requisitos.txt
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requisitos.txt
 
+COPY ./dockerfiles/añadir_geo_localizaciones/geocode_cache.json /app/geocode_cache.json
+
 # Copia el archivo de Python al contenedor
 COPY ./dockerfiles/añadir_geo_localizaciones/main.py /app/main.py
 
