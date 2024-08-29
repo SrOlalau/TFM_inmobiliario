@@ -167,7 +167,6 @@ def create_table_if_not_exists(conn, table_name):
         if not table_exists:
             cur.execute(sql.SQL("""
             CREATE TABLE {} (
-                id integer,
                 precio bigint,
                 sub_descr text,
                 href text,
@@ -209,7 +208,7 @@ def process_batch(batch_df, geocoder, conn_target, table_name):
         for _, row in result_df.iterrows():
             cur.execute(sql.SQL("""
             INSERT INTO {} (
-                id, precio, sub_descr, href, ubicacion, habitaciones, banios, m2, planta,
+                precio, sub_descr, href, ubicacion, habitaciones, banios, m2, planta,
                 publicado_hace, plataforma, origen, otros, latitude, longitude, raw_json,
                 ccaa, fuente_datos, alquiler_venta, fecha_extract, geocoding_error
             ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
