@@ -1,18 +1,17 @@
 import streamlit as st
 
-
 def load_custom_css():
-    with open('./static/main.css') as f:
+    with open('./app/static/main.css') as f:
         css = f.read()
     st.html(f'<style>{css}</style>')
 
 
 def set_sidebar_logo():
-    st.logo(image="./static/images/logo_long.png", icon_image="./static/images/logo.png")
+    st.logo(image="./app/static/images/logo_long.png", icon_image="./app/static/images/logo.png")
 
 
 def set_logo():
-    st.image("./static/images/logo_long.png", use_column_width=True)
+    st.image("./app/static/images/logo_long.png", use_column_width=True)
 
 
 def set_assets():

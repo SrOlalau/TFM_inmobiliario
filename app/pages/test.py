@@ -11,9 +11,10 @@ from sklearn.linear_model import LinearRegression
 import os
 import joblib
 import streamlit as st
+from app.models.load_models import load_model
 
 # Cargar el modelo de machine learning
-model = joblib.load('modelo_test.pkl')
+model = load_model()
 
 # Título de la aplicación
 st.title('Predicción de Precios de Habitaciones en España')
