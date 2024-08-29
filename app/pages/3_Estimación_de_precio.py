@@ -2,7 +2,7 @@ import streamlit as st
 import folium as fl
 from streamlit_folium import st_folium
 import pgeocode
-from utils.assets_loader import set_assets, render_header, render_footer
+from app.utils.assets_loader import set_assets, render_header, render_footer
 
 # Inicializa el objeto de búsqueda por código postal
 nomi = pgeocode.Nominatim('es')

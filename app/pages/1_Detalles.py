@@ -1,5 +1,5 @@
 import streamlit as st
-from utils.assets_loader import set_assets, render_header, render_footer
+from app.utils.assets_loader import set_assets, render_header, render_footer
 
 
 def render_details():
