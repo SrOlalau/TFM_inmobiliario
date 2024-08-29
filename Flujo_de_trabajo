@@ -5,7 +5,7 @@ Procesos de única ejecución:
 Proceso de ejecución contínua:
 1. Scrapeo de los datos ( Ok en servidor ) | En la carpeta web_scraping_scripts
 2. Limpieza y juntar de los datos ( Ok en servidor ) | En la carpeta datamunging
-3. Añadir geo localizaciones a los datos (Ok en main) | En (main) data/geolocations/add_geoloc.py
+3. Añadir geo localizaciones a los datos (EN PROCESO EN SERVER) | En (main) data/geolocations/add_geoloc.py
 4. Calcular las distancias de POI (Ok en main) | Es el archivo /data/geolocations/calculate_POI_distance.py
 5. Añadir indices de criminalidad ( extra ) para obtener el dataset final que usaremos para streamline | que hay que añadir lo de indices de criminalidad
 
