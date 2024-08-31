@@ -4,7 +4,7 @@ import re
 # Open and read the file
 def indice_criminalidad (script_dir):
 #script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    file_path = os.path.join(script_dir, '\Ind_criminalidad_ESP.csv')
+    file_path = os.path.join(script_dir, 'Ind_criminalidad_ESP.csv')
 
     with open(file_path, 'r', encoding='utf-8') as file:
         lines = file.readlines()
@@ -64,7 +64,7 @@ def indice_criminalidad (script_dir):
     df['Enero-Marzo 2024'] = pd.to_numeric(df['Enero-Marzo 2024'], errors='coerce')
     df['Porcentaje variación 2024/2023'] = pd.to_numeric(df['Porcentaje variación 2024/2023'], errors='coerce')
     df.head(20)  # Displaying the first 20 ro
-    output_path = os.path.join(script_dir, '\indice_crim_ESP.csv')
+    output_path = os.path.join(script_dir, 'indice_crim_ESP.csv')
 
     # Guardar el DataFrame como un archivo CSV en la ruta especificada
     df.to_csv(output_path, index=False)
