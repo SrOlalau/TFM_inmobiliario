@@ -27,8 +27,7 @@ def preprocesado():
 
 def criminalidad_tuning():
     # Determine the script directory
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    indice_criminalidad.main(script_dir)
+    indice_criminalidad.main()
 
 def machine_learning ():
     # Obtener la fecha y hora actuales
