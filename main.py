@@ -3,7 +3,7 @@ import os
 from data.POI import POI_OSM_downloader
 from data.geolocations import add_geoloc, calculate_POI_distance
 from datamunging import datamunging
-from datatuning import criminalidadtuning
+from data.criminalidad import indice_criminalidad
 from machinelearning import machinelearning
 from web_scraping_scripts import web_scraping_pisos, web_scraping_trovit
 from datetime import datetime
@@ -28,7 +28,7 @@ def preprocesado():
 def criminalidad_tuning():
     # Determine the script directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
-    criminalidadtuning.main(script_dir)
+    indice_criminalidad.main(script_dir)
 
 def machine_learning ():
     # Obtener la fecha y hora actuales
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     #scraping()
 
     #Tuning de indices de criminalidad
-    #criminalidad_tuning()
+    criminalidad_tuning()
 
     # Después de hacer el scrpaping diario, vuelve a juntar todos los csv y ejecuta datamunging
     preprocesado()
