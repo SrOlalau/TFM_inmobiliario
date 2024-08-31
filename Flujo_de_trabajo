@@ -1,14 +1,13 @@
 Procesos de única ejecución:
-1.Obtener los datos del POI ( Ok en el servidor ) | En (main) data/POI/POI_OSM_downloader.py
-2.Tuning de datos de criminalidad ( Pendiente ) | En (main) datatuning/criminalidadtuning.py
+1.Obtener los datos del POI ( Ok en el servidor ) | En (main) data/POI/POI_OSM_downloader.py (LISTO)
+2.Tuning de datos de criminalidad ( Pendiente ) | En (main) data/criminalidad/indice__criminalidad.py (LISTO)
 
 Proceso de ejecución contínua:
 1. Scrapeo de los datos ( Ok en servidor ) | En la carpeta web_scraping_scripts
-2. Limpieza y juntar de los datos ( Ok en servidor ) | En la carpeta datamunging
-3. Añadir geo localizaciones a los datos (EN PROCESO EN SERVER) | En (main) data/geolocations/add_geoloc.py
+2. Limpieza y juntar de los datos ( Ok en servidor ) | En la carpeta datamunging (LISTO)
+3. Añadir geo localizaciones a los datos (EN PROCESO EN SERVER) | En (main) data/geolocations/add_geoloc.py 
 4. Calcular las distancias de POI (Ok en main) | Es el archivo /data/geolocations/calculate_POI_distance.py
-5. Añadir indices de criminalidad ( extra ) para obtener el dataset final que usaremos para streamline | que hay que añadir lo de indices de criminalidad
+5. Añadir indices de criminalidad ( extra ) para obtener el dataset final que usaremos para streamline | En (main) (PENDIENTE)
 
-5.Data tunning normal ( Pendiente ) | Es el archivo /datatuning/datatuning.py
-8.Ejecutar el machine learning ( Pendiente ) | Es el archivo /machinelearning/machinelearning.py
+7.Ejecutar el machine learning ( Pendiente ) | Es el archivo /machinelearning/machinelearning.py
 
