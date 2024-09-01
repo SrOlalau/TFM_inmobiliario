@@ -3,6 +3,22 @@ import pandas as pd
 import re
 import psycopg2
 from psycopg2 import sql
+import requests
+from datetime import datetime, timedelta
+
+# Configura tu token de bot y el ID de chat
+TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
+TELEGRAM_CHAT_ID = '297175679'
+
+# Función para enviar mensajes a Telegram
+def send_telegram_message(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    params = {
+        "chat_id": TELEGRAM_CHAT_ID,
+        "text": message
+    }
+    response = requests.get(url, params=params)
+    return response
 
 def connect_db(db_name, db_user, db_password, db_host, db_port):
     conn = psycopg2.connect(
@@ -27,8 +43,11 @@ def limpiar_numeros(numero_en_sucio):
     except ValueError:
         return None
 
-def fetch_data_from_db(conn, table_name):
-    query = f"SELECT * FROM {table_name};"
+def fetch_data_from_db(conn, table_name, recent_days_filter=None):
+    if recent_days_filter:
+        query = f"SELECT * FROM {table_name} WHERE fecha >= CURRENT_DATE - INTERVAL '{recent_days_filter} days';"
+    else:
+        query = f"SELECT * FROM {table_name};"
     df = pd.read_sql(query, conn)
     return df
 
@@ -45,7 +64,7 @@ def validate_and_clean_data(df):
 
     return df
 
-def process_and_insert_data(df, source, target_conn):
+def process_and_insert_data(df, source, target_conn, recent_days_filter=None):
     df['fuente_datos'] = source
     df['alquiler_venta'] = df['tipo']
     df['fecha_extract'] = pd.to_datetime(df['fecha'], format='%Y-%m-%d', errors='coerce')
@@ -73,8 +92,8 @@ def process_and_insert_data(df, source, target_conn):
     if 'longitude' in df.columns:
         df['longitude'] = pd.to_numeric(df['longitude'], errors='coerce')
 
-    # Eliminar duplicados basándose en la columna href
-    df = df.drop_duplicates(subset=['href'])
+    # Eliminar duplicados basándose en la columna href y fecha
+    df = df.drop_duplicates(subset=['href', 'fecha'])
 
     # Asegurar que todas las columnas necesarias existan
     required_columns = ['precio', 'sub_descr', 'href', 'ubicacion', 'habitaciones', 'banios', 'mt2', 'otros',
@@ -84,19 +103,8 @@ def process_and_insert_data(df, source, target_conn):
         if col not in df.columns:
             df[col] = None
 
-    # Mostrar un resumen del DataFrame resultante
-    print(f"\nResumen del DataFrame para {source}:")
-    print(df.info())
-    print("\nPrimeras 5 filas:")
-    print(df.head())
-    print("\nValores únicos en columnas importantes:")
-    for col in ['origen', 'plataforma', 'planta', 'publicado_hace']:
-        if col in df.columns:
-            print(f"{col}: {df[col].nunique()} valores únicos")
-            print(f"Ejemplos: {df[col].value_counts().head()}")
-
     create_table_if_not_exists(target_conn)
-    insert_data_into_db(target_conn, df)
+    insert_or_update_data_into_db(target_conn, df)
 
 def create_table_if_not_exists(conn):
     with conn.cursor() as cur:
@@ -127,7 +135,7 @@ def create_table_if_not_exists(conn):
         cur.execute(create_table_query)
         conn.commit()
 
-def insert_data_into_db(conn, df):
+def insert_or_update_data_into_db(conn, df):
     with conn.cursor() as cur:
         for index, row in df.iterrows():
             try:
@@ -141,7 +149,6 @@ def insert_data_into_db(conn, df):
                     else:
                         row_data[col] = val
 
-                # Convertir explícitamente ciertos campos a tipos específicos
                 int_fields = ['precio', 'habitaciones', 'banios', 'mt2']
                 for field in int_fields:
                     if row_data[field] is not None:
@@ -158,25 +165,53 @@ def insert_data_into_db(conn, df):
                         except ValueError:
                             row_data[field] = None
 
-                insert_query = sql.SQL("""
-                    INSERT INTO consolidated_data (
-                        precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, planta,
-                        publicado_hace, plataforma, origen, otros, latitude, longitude, raw_json,
-                        ccaa, fuente_datos, alquiler_venta, fecha_extract
-                    ) VALUES (
-                        %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s,
-                        %(mt2)s, %(planta)s, %(publicado_hace)s, %(plataforma)s, %(origen)s, %(otros)s,
-                        %(latitude)s, %(longitude)s, %(raw_json)s, %(ccaa)s, %(fuente_datos)s,
-                        %(alquiler_venta)s, %(fecha_extract)s
-                    )
-                """)
-                cur.execute(insert_query, row_data)
+                # Primero, verifica si el registro ya existe
+                cur.execute(
+                    "SELECT id FROM consolidated_data WHERE href = %s AND fecha_extract = %s",
+                    (row_data['href'], row_data['fecha_extract'])
+                )
+                result = cur.fetchone()
+
+                if result:
+                    # Si existe, realiza un UPDATE
+                    update_query = sql.SQL("""
+                        UPDATE consolidated_data
+                        SET precio = %s, sub_descr = %s, ubicacion = %s, habitaciones = %s, banios = %s, mt2 = %s,
+                            planta = %s, publicado_hace = %s, plataforma = %s, origen = %s, otros = %s,
+                            latitude = %s, longitude = %s, raw_json = %s, ccaa = %s, fuente_datos = %s, 
+                            alquiler_venta = %s
+                        WHERE id = %s
+                    """)
+                    cur.execute(update_query, (
+                        row_data['precio'], row_data['sub_descr'], row_data['ubicacion'], row_data['habitaciones'], 
+                        row_data['banios'], row_data['mt2'], row_data['planta'], row_data['publicado_hace'], 
+                        row_data['plataforma'], row_data['origen'], row_data['otros'], row_data['latitude'], 
+                        row_data['longitude'], row_data['raw_json'], row_data['ccaa'], row_data['fuente_datos'], 
+                        row_data['alquiler_venta'], result[0]
+                    ))
+                else:
+                    # Si no existe, realiza un INSERT
+                    insert_query = sql.SQL("""
+                        INSERT INTO consolidated_data (
+                            precio, sub_descr, href, ubicacion, habitaciones, banios, mt2, planta,
+                            publicado_hace, plataforma, origen, otros, latitude, longitude, raw_json,
+                            ccaa, fuente_datos, alquiler_venta, fecha_extract
+                        ) VALUES (
+                            %(precio)s, %(sub_descr)s, %(href)s, %(ubicacion)s, %(habitaciones)s, %(banios)s,
+                            %(mt2)s, %(planta)s, %(publicado_hace)s, %(plataforma)s, %(origen)s, %(otros)s,
+                            %(latitude)s, %(longitude)s, %(raw_json)s, %(ccaa)s, %(fuente_datos)s,
+                            %(alquiler_venta)s, %(fecha_extract)s
+                        )
+                    """)
+                    cur.execute(insert_query, row_data)
+                
             except Exception as e:
-                print(f"Error inserting row at index {index}: {row_data}")
+                print(f"Error inserting/updating row at index {index}: {row_data}")
                 print(f"Exception: {e}")
                 conn.rollback()
                 raise e
         conn.commit()
+
 def main():
     # Conexiones a las bases de datos de origen
     conn_pisos = connect_db("scraping_pisos", "pisos", "pisos", "10.1.2.2", "5437")
@@ -185,15 +220,30 @@ def main():
     # Conexión a la base de datos de destino
     conn_target = connect_db("datos_limpios", "datos_limpios", "datos_limpios", "10.1.2.2", "5439")
 
+    # Variable para activar o desactivar el filtro de 3 días
+    use_recent_days_filter = False
+    recent_days = 3
+
     try:
+        # Enviar mensaje de inicio a Telegram
+        send_telegram_message("Iniciando limpieza de datos")
+
         # Fetch and process data from pisos.com
-        df_pisos = fetch_data_from_db(conn_pisos, "scraping_pisos_tabla")
+        df_pisos = fetch_data_from_db(conn_pisos, "scraping_pisos_tabla", recent_days_filter=recent_days if use_recent_days_filter else None)
         process_and_insert_data(df_pisos, "pisos.com", conn_target)
 
         # Fetch and process data from trovit
-        df_trovit = fetch_data_from_db(conn_trovit, "scraping_trovit_tabla")
+        df_trovit = fetch_data_from_db(conn_trovit, "scraping_trovit_tabla", recent_days_filter=recent_days if use_recent_days_filter else None)
         process_and_insert_data(df_trovit, "trovit", conn_target)
-    
+
+        # Obtener el número total de filas en la base de datos de destino
+        total_rows_query = "SELECT COUNT(*) FROM consolidated_data;"
+        total_rows = pd.read_sql(total_rows_query, conn_target).iloc[0, 0]
+
+        # Enviar mensaje de finalización a Telegram
+        processed_rows = len(df_pisos) + len(df_trovit)
+        send_telegram_message(f"Limpieza de datos finalizada. Filas procesadas: {processed_rows}. Filas totales en la base de datos: {total_rows}")
+
     finally:
         # Cerrar conexiones
         conn_pisos.close()
