@@ -7,7 +7,8 @@ Proceso de ejecución contínua:
 2. Limpieza y juntar de los datos ( Ok en servidor ) | En la carpeta datamunging (LISTO)
 3. Añadir geo localizaciones a los datos (Ok en servidor) | En (main) data/geolocations/add_geoloc.py 
 4. Calcular las distancias de POI (Ok en main) | Es el archivo /data/geolocations/calculate_POI_distance.py
-5. Añadir indices de criminalidad ( extra ) para obtener el dataset final que usaremos para streamline | En (main) (PENDIENTE)
+5. (PENDIENTE en servidor) | (PENDIENTE en main)
+6. Añadir indices de criminalidad ( extra ) para obtener el dataset final que usaremos para streamline | En (main) (PENDIENTE)
 
-7.Ejecutar el machine learning ( Pendiente ) | Es el archivo /machinelearning/machinelearning.py
+8.Ejecutar el machine learning ( Pendiente ) | Es el archivo /machinelearning/machinelearning.py
 
