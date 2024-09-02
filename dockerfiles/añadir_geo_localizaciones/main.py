@@ -4,7 +4,10 @@ import requests
 import time
 import json
 import os
+import re
+import pgeocode
 from psycopg2 import sql
+from fuzzywuzzy import fuzz
 
 # Configuración de Telegram
 TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
@@ -48,13 +51,13 @@ def load_data_from_db(conn, query):
         print(f"Error loading data from database: {e}")
         return None
 
-def get_existing_hrefs(conn_target):
+def get_existing_records(conn_target):
     """
-    Obtiene una lista de hrefs ya insertados en la tabla 'datos_limpios_con_geo' de la base de datos de destino.
+    Obtiene una lista de combinaciones de href y fecha_extract ya insertadas en la tabla 'datos_limpios_con_geo' de la base de datos de destino.
     """
-    query = "SELECT href FROM datos_limpios_con_geo"
-    existing_hrefs = pd.read_sql_query(query, conn_target)
-    return set(existing_hrefs['href'].tolist())  # Convertir a conjunto para búsquedas rápidas
+    query = "SELECT href, fecha_extract FROM datos_limpios_con_geo"
+    existing_records = pd.read_sql_query(query, conn_target)
+    return set(existing_records.apply(lambda row: (row['href'], row['fecha_extract']), axis=1).tolist())
 
 def check_and_create_table(conn):
     """
@@ -127,7 +130,7 @@ def insert_row_to_db(conn, row):
         row['latitude'] if pd.notna(row['latitude']) else None, 
         row['longitude'] if pd.notna(row['longitude']) else None, 
         row['raw_json'], row['ccaa'], row['fuente_datos'], 
-        row['alquiler_venta'], row['fecha_extract'], row['geocoding_error']
+        row['alquiler_venta'], row['fecha_extract'], row['geocoding_error'] if pd.notna(row['geocoding_error']) else None
     ]
 
     try:
@@ -221,6 +224,7 @@ class GeocoderCache:
             if lat is not None and lon is not None:
                 df.loc[(df[address_column] == address) & mask, 'latitude'] = float(lat)
                 df.loc[(df[address_column] == address) & mask, 'longitude'] = float(lon)
+                df.loc[(df[address_column] == address) & mask, 'geocoding_error'] = None  # Limpiar el error si se encontró
             else:
                 error = self.cache[address].get('error') if isinstance(self.cache[address], dict) else None
                 df.loc[(df[address_column] == address) & mask, 'geocoding_error'] = error
@@ -232,6 +236,65 @@ class GeocoderCache:
             print(f"Geocoded {index + 1} of {len(addresses_to_geocode)} addresses.")
 
         self.save_cache()
+        return df
+
+    def filter_and_geocode_errors(self, error_addresses, df, address_column='ubicacion'):
+        """
+        Intenta geocodificar direcciones fallidas utilizando el código postal.
+        """
+        postal_code_regex = re.compile(r'^(\d{5}),')
+
+        postal_codes = []
+        address_map = {}
+
+        # Extraer códigos postales de las direcciones fallidas
+        for address in error_addresses:
+            if address and isinstance(address, str):
+                match = postal_code_regex.match(address)
+                if match:
+                    postal_code = match.group(1)
+                    postal_codes.append(postal_code)
+                    address_map[postal_code] = address
+
+        # Consultar pgeocode para los códigos postales
+        nomi = pgeocode.Nominatim('es')
+        results = nomi.query_postal_code(postal_codes)
+
+        for i, result in results.iterrows():
+            if not pd.isna(result['latitude']) and not pd.isna(result['longitude']):
+                postal_code = result['postal_code']
+                lat, lon = result['latitude'], result['longitude']
+                original_address = address_map[postal_code]
+
+                # Fuzzy matching para validar la coincidencia
+                relevant_fields = [
+                    result['place_name'],
+                    result['state_name'],
+                    result['community_name'],
+                    result['county_name']
+                ]
+
+                address_text = postal_code_regex.sub('', original_address).strip().lower()
+
+                valid_match = False
+                for field in relevant_fields:
+                    if pd.notna(field):
+                        field = field.lower()
+                        score = fuzz.token_set_ratio(field, address_text)
+                        if score >= 97:
+                            valid_match = True
+                            break
+
+                if valid_match:
+                    self.cache[original_address] = (lat, lon)
+                    df.loc[(df[address_column] == original_address), 'latitude'] = float(lat)
+                    df.loc[(df[address_column] == original_address), 'longitude'] = float(lon)
+                    df.loc[(df[address_column] == original_address), 'geocoding_error'] = None
+                else:
+                    print(f"No valid match found for {original_address} with postal code {postal_code}. Skipping.")
+
+        self.save_cache()
+
         return df
 
 def main():
@@ -250,8 +313,8 @@ def main():
     # Comprobar si la tabla existe y crearla si es necesario
     check_and_create_table(conn_target)
 
-    # Obtener hrefs ya insertados
-    existing_hrefs = get_existing_hrefs(conn_target)
+    # Obtener combinaciones de href y fecha_extract ya insertadas
+    existing_records = get_existing_records(conn_target)
     
     # Definir la consulta SQL para obtener los datos
     query = "SELECT * FROM consolidated_data"
@@ -265,15 +328,12 @@ def main():
     # Cerrar la conexión a la base de datos de origen
     conn_source.close()
     
-    # Filtrar filas nuevas (href no en existing_hrefs)
-    new_rows = df[~df['href'].isin(existing_hrefs)]
+    # Filtrar filas nuevas (combinaciones de href y fecha_extract no en existing_records)
+    new_rows = df[~df.apply(lambda row: (row['href'], row['fecha_extract']), axis=1).isin(existing_records)]
     
     if new_rows.empty:
         send_telegram_message("No hay nuevas filas para procesar.")
         return
-    
-    # Filtrar filas con valores nulos en 'latitude' o 'longitude'
-    filtered_df = new_rows[new_rows['latitude'].isna() | new_rows['longitude'].isna()]
     
     # Establecer el nombre del archivo de caché en la misma ruta que el script
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -282,18 +342,25 @@ def main():
     # Inicializar la caché de geocodificación
     geocoder = GeocoderCache(cache_file=cache_path)
     
-    # Procesar y geocodificar todas las filas seleccionadas
-    result_df = geocoder.process_and_geocode(filtered_df, address_column='ubicacion')
+    # Procesar y geocodificar las filas sin longitud ni latitud
+    result_df = geocoder.process_and_geocode(new_rows, address_column='ubicacion')
     
-    # Insertar las filas una por una
-    for index, row in result_df.iterrows():
+    # Identificar direcciones con errores en la geocodificación
+    error_mask = result_df['latitude'].isna() | result_df['longitude'].isna() | result_df['geocoding_error'].notna()
+    error_addresses = result_df.loc[error_mask, 'ubicacion'].unique()
+
+    if len(error_addresses) > 0:
+        result_df = geocoder.filter_and_geocode_errors(error_addresses, result_df, address_column='ubicacion')
+    
+    # Insertar todas las filas (incluyendo las que ya tenían longitud y latitud)
+    for index, row in new_rows.iterrows():
         insert_row_to_db(conn_target, row)
-        print(f"Inserted {index + 1} of {len(result_df)} rows into database.")
+        print(f"Inserted {index + 1} of {len(new_rows)} rows into database.")
     
     # Cerrar la conexión a la base de datos de destino
     conn_target.close()
 
-    send_telegram_message(f"El proceso de geocode ha finalizado. Filas insertadas: {len(result_df)}")
+    send_telegram_message(f"El proceso de geocode ha finalizado. Filas insertadas: {len(new_rows)}")
 
 # Ejecutar el script
 main()
