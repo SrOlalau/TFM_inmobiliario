@@ -4,19 +4,53 @@ from sklearn.model_selection import train_test_split
 from sklearn.impute import SimpleImputer
 import os
 from scipy import stats
+from sklearn.base import BaseEstimator, TransformerMixin
+import warnings
+
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
+class GroupedImputer(BaseEstimator, TransformerMixin):
+    def __init__(self, cat_columns, group_column, strategy='most_frequent'):
+        self.cat_columns = cat_columns
+        self.group_column = group_column
+        self.strategy = strategy
+        self.imputers = {col: SimpleImputer(strategy=self.strategy) for col in self.cat_columns}
+
+    def fit(self, X, y=None):
+        # Ajustar los imputadores a los datos de cada grupo
+        grouped = X.groupby(self.group_column)
+        for col in self.cat_columns:
+            for _, group in grouped:
+                self.imputers[col].fit(group[[col]])
+        return self
+
+    def transform(self, X):
+        print(f'imputando:{self.cat_columns}')
+        # Aplicar la imputación a cada grupo
+        X_imputed = X.groupby(self.group_column, group_keys=False).apply(self._impute_group)
+        return X_imputed
+
+    def _impute_group(self, group):
+        for col in self.cat_columns:
+            group[col] = self.imputers[col].transform(group[[col]]).ravel()
+        return group
 
 def data_tuning(script_dir):
     # Ruta del archivo CSV
-    file_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
+    file_path = os.path.join(script_dir, 'datamunging/consolidated_data_POI.csv')
     # Leer el archivo CSV en un DataFrame
     df = pd.read_csv(file_path)
     #Eliminar filas donde 'precio' es NaN, 0, o infinito
     df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
-    df = df.drop(['planta', 'publicado_hace', 'raw_json'], axis=1)
+    df = df.drop(['planta', 'publicado_hace', 'raw_json', 'fuente_datos','sub_descr', 'href', 'ubicacion', 'otros'], axis=1)
+    print("variables categoricas del DF son:")
+    print(df.select_dtypes(include=['category','object']).columns.tolist())
+    print("variables numericas del DF son:")
+    print(df.select_dtypes(include=['number']).columns.tolist())
     #CAMBIO INCORPORADO DESDE EL EDA
     # Se tramifica variable numérica y se vuelve de tipo objeto
-    df['habitaciones'] = df['habitaciones'].apply(lambda x: '8 o más' if x >= 8 else x)
-    df['banios'] = df['banios'].apply(lambda x: '7 o más' if x >= 7 else x)
+#    df['habitaciones'] = df['habitaciones'].apply(lambda x: '8 o más' if x >= 8 else x)
+#    df['banios'] = df['banios'].apply(lambda x: '7 o más' if x >= 7 else x)
     #CAMBIO INCORPORADO DESDE EL EDA
     #Homegeneizamos la comunidad autónoma
     df['CCAA'] = df['CCAA'].replace({
@@ -41,31 +75,15 @@ def data_tuning(script_dir):
     df[to_factor] = df[to_factor].astype('category')
     #Sustituir Nan en plataforma por Pisos.com ya que era la única sin esa variable
     df['plataforma']= df['plataforma'].replace(np.nan, 'Pisos')
+    
+    #Imputaciones categóricas por moda y numericas por promedio
+    cat_cols = df.select_dtypes(include=['category','object']).columns.tolist()
+    cat_imputer = GroupedImputer(cat_cols,'CCAA')
+    df = cat_imputer.fit_transform(df)
 
-
-    cat_cols = df.select_dtypes(include=['category','object']).columns
-    #Nombre de la columna que contiene la comunidad autónoma
-    group_col = 'CCAA'  # Asegúrate de que este es el nombre correcto de tu columna de comunidad autónoma
-    #Crear un objeto SimpleImputer para imputación por moda
-    imputer = SimpleImputer(strategy='most_frequent')
-    #Función para aplicar la imputación por moda a cada grupo
-    def impute_group(group):
-        group[cat_cols] = imputer.fit_transform(group[cat_cols])
-        return group
-    #Aplicar la imputación a cada grupo de comunidad autónoma usando apply
-    df = df.groupby(group_col, group_keys=False).apply(impute_group)
-
-
-    #Imputación de numéricos por la mediana
-    num_cols = df.select_dtypes(include=['number']).columns
-    # Crear un objeto SimpleImputer con la estrategia de imputación 'median'
-    imputer_num = SimpleImputer(strategy='median')
-    #Función para aplicar la imputación por moda a cada grupo
-    def impute_group_num(group):
-        group[num_cols] = imputer_num.fit_transform(group[num_cols])
-        return group
-    # Aplicar la imputación solo a las columnas numéricas
-    df = df.groupby(group_col, group_keys=False).apply(impute_group_num)
+    num_cols = ['habitaciones', 'banios', 'mt2']
+    num_imputer = GroupedImputer(num_cols,'CCAA','mean')
+    df = num_imputer.fit_transform(df)
 
     #def winsorize_with_pandas(s, limits):
     #    """
@@ -105,7 +123,7 @@ def data_tuning(script_dir):
     # Aplicar la función de outliers a la columna completa
     #df['mt2'] = gestiona_outliers(df['mt2'], clas='winsor')
 
-    output_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
+    output_path = os.path.join(script_dir, 'datamunging/consolidated_data_DT.csv')
     df.to_csv(output_path, index=False)
 
 
