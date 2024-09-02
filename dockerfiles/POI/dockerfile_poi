@@ -10,8 +10,6 @@ COPY ./dockerfiles/POI/requisitos.txt /app/requisitos.txt
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requisitos.txt
 
-COPY ./dockerfiles/POI/geocode_cache.json /app/geocode_cache.json
-
 # Copia el archivo de Python al contenedor
 COPY ./dockerfiles/POI/main.py /app/main.py
 
