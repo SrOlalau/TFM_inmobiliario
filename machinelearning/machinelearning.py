@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -6,7 +7,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.ensemble import RandomForestRegressor
-import os
 import joblib
 
 def print_statistics(X_test, y_test, y_pred_rf, rf_pipeline):
@@ -46,7 +46,7 @@ def print_statistics(X_test, y_test, y_pred_rf, rf_pipeline):
     print(importance_df.head(10))
 
 def machine_learning(script_dir):
-    file_path = os.path.join(script_dir, 'datamunging/consolidated_data_DT.csv')
+    file_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
     df = pd.read_csv(file_path)
     print(f"Tamaño del DataFrame: {df.shape}")
 
@@ -81,7 +81,12 @@ def machine_learning(script_dir):
 
     print_statistics(X_test, y_test, y_pred_rf, rf_pipeline)
 
-    model_file_path = os.path.join(script_dir, 'models', 'trained_models.pkl')
+    # Verifica si el directorio 'models' existe y si no, créalo
+    models_dir = os.path.join(script_dir, 'machinelearning/models')
+    if not os.path.exists(models_dir):
+        os.makedirs(models_dir)
+
+    model_file_path = os.path.join(models_dir, 'trained_models.pkl')
     with open(model_file_path, 'wb') as f:
         joblib.dump({
             'random_forest': rf_pipeline,
