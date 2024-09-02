@@ -203,10 +203,6 @@ def create_table_and_insert_data(df, db_name, db_user, db_password, db_host, db_
         columns = ', '.join(row.index)
         sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
         cursor.execute(sql, tuple(row))
-        
-        # Log de progreso
-        if (i + 1) % 100 == 0:  # Log cada 100 registros
-            send_telegram_message(f"{i + 1} registros insertados en la tabla {table_name}.")
 
     conn.commit()
     cursor.close()
