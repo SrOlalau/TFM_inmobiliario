@@ -17,31 +17,45 @@ def send_telegram_message(message):
     }
     requests.post(url, data=payload)
 
-def load_poi_data(db_name, db_user, db_password, db_host, db_port, table_name):
-    conn = psycopg2.connect(
+def connect_db(db_name, db_user, db_password, db_host, db_port):
+    """
+    Establece una conexión a la base de datos PostgreSQL.
+    """
+    return psycopg2.connect(
         dbname=db_name,
         user=db_user,
         password=db_password,
         host=db_host,
         port=db_port
     )
+
+def load_poi_data(db_name, db_user, db_password, db_host, db_port, table_name):
+    conn = connect_db(db_name, db_user, db_password, db_host, db_port)
     query = f"SELECT * FROM {table_name};"
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
 
 def load_coordinates_data(db_name, db_user, db_password, db_host, db_port, table_name):
-    conn = psycopg2.connect(
-        dbname=db_name,
-        user=db_user,
-        password=db_password,
-        host=db_host,
-        port=db_port
-    )
+    conn = connect_db(db_name, db_user, db_password, db_host, db_port)
     query = f"SELECT * FROM {table_name};"
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
+
+def get_existing_records(conn, table_name):
+    """
+    Obtiene una lista de combinaciones de href y fecha_extract ya insertadas en la tabla de destino.
+    """
+    query = f"SELECT href, fecha_extract FROM {table_name};"
+    existing_records = pd.read_sql_query(query, conn)
+    return set(existing_records.apply(lambda row: (row['href'], row['fecha_extract']), axis=1).tolist())
+
+def filter_new_data(df, existing_records):
+    """
+    Filtra los registros que ya existen en la tabla de destino.
+    """
+    return df[~df.apply(lambda row: (row['href'], row['fecha_extract']), axis=1).isin(existing_records)]
 
 class POI_counter:
     def __init__(self, poi_df):
@@ -135,13 +149,7 @@ class POI_counter:
         return result_df
 
 def create_table_and_insert_data(df, db_name, db_user, db_password, db_host, db_port, table_name):
-    conn = psycopg2.connect(
-        dbname=db_name,
-        user=db_user,
-        password=db_password,
-        host=db_host,
-        port=db_port
-    )
+    conn = connect_db(db_name, db_user, db_password, db_host, db_port)
     cursor = conn.cursor()
 
     # Definir las columnas de la tabla
@@ -188,14 +196,18 @@ def create_table_and_insert_data(df, db_name, db_user, db_password, db_host, db_
         columns = ', '.join(row.index)
         sql = f"INSERT INTO {table_name} ({columns}) VALUES ({placeholders})"
         cursor.execute(sql, tuple(row))
-    
+        
+        # Log de progreso
+        if (i + 1) % 100 == 0:  # Log cada 100 registros
+            send_telegram_message(f"{i + 1} registros insertados en la tabla {table_name}.")
+
     conn.commit()
     cursor.close()
     conn.close()
 
 def main():
     # Enviar mensaje al iniciar el proceso
-    send_telegram_message("El proceso de calculo de PO comenzado.")
+    send_telegram_message("El proceso de cálculo de POI ha comenzado.")
 
     db_name_poi = "scraping_openstreetmaps"
     db_user_poi = "POI"
@@ -213,19 +225,31 @@ def main():
     db_port_coords = "5441"
     table_name_coords = "datos_limpios_con_geo"
 
+    # Cargar datos de coordenadas
     coords_df = load_coordinates_data(db_name_coords, db_user_coords, db_password_coords, db_host_coords, db_port_coords, table_name_coords)
-    coords_sample_df = coords_df.sample(n=10, random_state=1)
+
+    # Conectar a la base de datos de destino para obtener registros existentes
+    conn_target = connect_db("geo_y_poi", "geo_y_poi", "geo_y_poi", "10.1.2.2", "5442")
+    existing_records = get_existing_records(conn_target, "Datos_limpios_con_geo_y_poi")
+    conn_target.close()
+
+    # Filtrar solo las filas nuevas que no están en la tabla de destino
+    new_coords_df = filter_new_data(coords_df, existing_records)
+
+    if new_coords_df.empty:
+        send_telegram_message("No hay datos nuevos para procesar.")
+        return
 
     poi_counter = POI_counter(poi_df)
     poi_counter.set_poi_types(poi_counter.poi_types)
     poi_counter.set_radii([1, 3, 5])
 
-    resultado_df = poi_counter.calculate_poi_counts(coords_sample_df)
+    resultado_df = poi_counter.calculate_poi_counts(new_coords_df)
 
     create_table_and_insert_data(resultado_df, "geo_y_poi", "geo_y_poi", "geo_y_poi", "10.1.2.2", "5442", "Datos_limpios_con_geo_y_poi")
 
     # Enviar mensaje al finalizar el proceso con el número de filas procesadas
-    send_telegram_message(f"El proceso de calculo de POI ha terminado. Se han procesado {len(resultado_df)} filas.")
+    send_telegram_message(f"El proceso de cálculo de POI ha terminado. Se han procesado {len(resultado_df)} filas.")
 
 if __name__ == "__main__":
     main()
