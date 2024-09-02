@@ -45,16 +45,23 @@ def load_coordinates_data(db_name, db_user, db_password, db_host, db_port, table
 
 def get_existing_records(conn, table_name):
     """
-    Obtiene una lista de combinaciones de href y fecha_extract ya insertadas en la tabla de destino.
+    Verifica si la tabla existe y, si es así, obtiene una lista de combinaciones de href y fecha_extract
+    ya insertadas en la tabla de destino.
     """
-    query = f"SELECT href, fecha_extract FROM {table_name};"
-    existing_records = pd.read_sql_query(query, conn)
-    return set(existing_records.apply(lambda row: (row['href'], row['fecha_extract']), axis=1).tolist())
+    try:
+        query = f"SELECT href, fecha_extract FROM {table_name};"
+        existing_records = pd.read_sql_query(query, conn)
+        return set(existing_records.apply(lambda row: (row['href'], row['fecha_extract']), axis=1).tolist())
+    except Exception as e:
+        print(f"La tabla {table_name} no existe o ocurrió un error al verificar registros existentes: {e}")
+        return None
 
 def filter_new_data(df, existing_records):
     """
     Filtra los registros que ya existen en la tabla de destino.
     """
+    if existing_records is None:
+        return df  # Si no hay registros existentes, devuelve todo el DataFrame
     return df[~df.apply(lambda row: (row['href'], row['fecha_extract']), axis=1).isin(existing_records)]
 
 class POI_counter:
