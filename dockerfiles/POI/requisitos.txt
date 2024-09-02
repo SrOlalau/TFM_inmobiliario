@@ -15,3 +15,4 @@ urllib3==2.2.2
 psycopg2==2.9.9
 pgeocode==0.5.0
 fuzzywuzzy==0.18.0
+joblib==1.4.0
