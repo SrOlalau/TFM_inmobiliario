@@ -14,3 +14,6 @@ __pycache__/
 
 # Ignora base de datos consolidados, para mantener solamente los datos una vez
 /datamunging/consolidated_data.csv
+
+#Ignora archivos pickle.pkl
+.pkl
