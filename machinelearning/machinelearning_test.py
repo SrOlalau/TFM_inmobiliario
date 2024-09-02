@@ -46,7 +46,7 @@ def print_statistics(X_test, y_test, y_pred_rf, rf_pipeline):
     print(importance_df.head(10))
 
 def machine_learning(script_dir):
-    file_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
+    file_path = os.path.join(script_dir, 'datamunging/consolidated_data_DT.csv')
     df = pd.read_csv(file_path)
     print(f"Tamaño del DataFrame: {df.shape}")
 
