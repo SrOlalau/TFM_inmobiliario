@@ -1,0 +1,19 @@
+# Usa la imagen base de Python 3.11
+FROM python:3.11.9
+
+# Establece el directorio de trabajo en el contenedor
+WORKDIR /app
+
+# Copia el archivo de requisitos al contenedor
+COPY ./dockerfiles/POI/requisitos.txt /app/requisitos.txt
+
+# Instala las dependencias
+RUN pip install --no-cache-dir -r requisitos.txt
+
+COPY ./dockerfiles/POI/geocode_cache.json /app/geocode_cache.json
+
+# Copia el archivo de Python al contenedor
+COPY ./dockerfiles/POI/main.py /app/main.py
+
+# Define el comando por defecto para listar archivos y ejecutar el script de entrada
+CMD ["python", "-u", "/app/main.py"]
