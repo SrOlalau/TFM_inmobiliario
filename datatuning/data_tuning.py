@@ -24,6 +24,7 @@ def data_tuning(script_dir):
     })
     #Sustituir Nan en plataforma por Pisos.com ya que era la única sin esa variable
     df['plataforma']= df['plataforma'].replace(np.nan, 'Pisos')
+    df = df.drop(columns=['publicado_hace'])
     output_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
     df.to_csv(output_path, index=False)
 
