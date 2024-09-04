@@ -25,7 +25,7 @@ def preprocesado():
     # Abre bbdd de datamunging y agrega geolocalizacion
     add_geoloc.main()
     calculate_POI_distance.main()
-    indice_criminalidad.main()
+    #indice_criminalidad.main()
 
 def datatuning():
     data_tuning.main()
