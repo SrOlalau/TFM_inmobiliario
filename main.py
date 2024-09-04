@@ -50,7 +50,7 @@ if __name__ == '__main__':
 
     # Después de hacer el scrpaping diario, vuelve a juntar todos los csv y ejecuta datamunging
     preprocesado()
-    #datatuning()
+    datatuning()
     machine_learning()
 
     
