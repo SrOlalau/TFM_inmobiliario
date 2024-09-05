@@ -23,8 +23,14 @@ def data_tuning(script_dir):
     'Alicante': 'alicante'
     })
     #Sustituir Nan en plataforma por Pisos.com ya que era la única sin esa variable
+    df = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
+    df = df[~df['mt2'].isin([0, np.inf, -np.inf]) & df['mt2'].notna()]
     df['plataforma']= df['plataforma'].replace(np.nan, 'Pisos')
-    df = df.drop(columns=['publicado_hace'])
+    df = df.drop(columns=['publicado_hace','plataforma'])
+    df['fecha_extract'] = pd.to_datetime(df['fecha_extract'], format='%Y-%m-%d')
+    fecha_mas_antigua = df['fecha_extract'].min()
+    df['mes_publicado'] = (df['fecha_extract'].dt.to_period('M') - fecha_mas_antigua.to_period('M')).apply(lambda x: x.n + 1)
+    
     output_path = os.path.join(script_dir, 'datamunging/consolidated_data.csv')
     df.to_csv(output_path, index=False)
 
