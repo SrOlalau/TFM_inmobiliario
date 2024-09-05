@@ -31,14 +31,8 @@ def datatuning():
     data_tuning.main()
 
 def machine_learning ():
-    # Obtener la fecha y hora actuales
-    fecha_hora_formateada = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-    print(f'Fecha y hora actual: {fecha_hora_formateada}')
-    start_time = time.time()
     # Modelos de predicción de variable objetivo
     machinelearning.main()
-    end_time = time.time()
-    print(f"MachineLearning time: {(end_time - start_time) / 60:.2f} minutes")
 
 if __name__ == '__main__':
     
