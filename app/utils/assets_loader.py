@@ -11,7 +11,9 @@ def set_sidebar_logo():
 
 
 def set_logo():
-    st.image("./app/static/images/logo_long.png", use_column_width=True)
+    left_co, cent_co, last_co = st.columns(3)
+    with cent_co:
+        st.image("./app/static/images/logo_long.png", use_column_width =True)
 
 
 def set_assets():
@@ -32,6 +34,6 @@ def render_header():
 def render_footer():
     st.markdown("""
         <div class="footer">
-            <p>&copy; 2024 Spain Housing Predictor. All rights reserved.</p>
+            <p>&copy; 2024 Precio Piso. Todos los derechos reservados.</p>
         </div>
     """, unsafe_allow_html=True)

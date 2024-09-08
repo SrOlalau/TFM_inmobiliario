@@ -198,9 +198,10 @@ body {
     text-align: center;
     font-size: 14px;
     color: #FFFFFF;
-    background-color: #343A40;
-    padding: 20px 0;
+    background-color: #021F27;
+    padding: 18px 0;
     border-top: 2px solid #FFC107;
+    border-radius: 8px;
 }
 
 .footer a {
@@ -231,4 +232,56 @@ body {
 
 .footer .fab:hover {
     color: #FFC107;
+}
+
+
+
+/* Contenedor Principal */
+.team-container {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Dos columnas */
+    gap: 20px;
+    padding: 40px 20px;
+}
+
+/* Contenedores de Miembros */
+.member-card {
+    background-color: #FFFFFF;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    text-align: center;
+    font-family: 'Open Sans', sans-serif;
+    color: #021f27;
+    border-style: solid;
+    border-width: medium;
+}
+
+.member-card h2 {
+    font-size: 24px;
+    margin-bottom: 10px;
+    font-family: 'Poppins', sans-serif;
+    color: #021f27;
+}
+
+.member-card p {
+    font-size: 16px;
+    margin: 5px 0;
+}
+
+.member-card a {
+    color: #1bbed5;
+    margin: 0 10px;
+    font-size: 20px;
+    transition: color 0.3s;
+}
+
+.member-card a:hover {
+    color: #FFC107;
+}
+
+.member-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
 }

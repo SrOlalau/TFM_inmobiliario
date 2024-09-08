@@ -70,8 +70,7 @@ def render_stats():
     st.markdown("_(Aquí se mostrarían los resultados de la predicción cuando el modelo esté integrado)_")
 
 if __name__ == "__main__":
-    st.set_page_config(page_title="Estima precios", page_icon="🖥️")
+    st.set_page_config(page_title="Estima precios", page_icon="🖥️", layout="wide")
     set_assets()
-    render_header()
     render_stats()
     render_footer()

@@ -17,8 +17,7 @@ def render_offers():
     st.markdown("_(Esta sección se conectará a una base de datos en una fase posterior para mostrar ofertas reales)_")
 
 if __name__ == "__main__":
-    st.set_page_config(page_title="Ofertas", page_icon="🔍")
+    st.set_page_config(page_title="Ofertas", page_icon="🔍", layout="wide")
     set_assets()
-    render_header()
     render_offers()
     render_footer()
