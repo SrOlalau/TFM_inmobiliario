@@ -11,6 +11,6 @@ Proceso de ejecución contínua:
 6. Añadir indices de criminalidad ( extra ) para obtener el dataset final que usaremos para streamline | En (PENDIENTE en main )
 
 8.Ejecutar el machine learning ( Pendiente ) | machinelearning/machinelearning.py ( Ok en main )
-9.Streamlit ( Pendiente en server ) | app/0_inicio.py ( Casi ok en main ) ( Commando : ) ( Ojo a la carpeta .streamlit y a añadir los modelos del machine learning )
+9.Streamlit ( Pendiente en server ) | app/0_inicio.py ( Casi ok en main ) ( Commando : python  -m streamlit run .\app\0_Inicio.py ) ( Ojo a la carpeta .streamlit y a añadir los modelos del machine learning )
   9.1 Eda ( Pendiente en servidor ) | EDA/EDA_graph_table_gen.py ( Ok en main ) ( insertar lo del EDA dentro del stramlit )
 
