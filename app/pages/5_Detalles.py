@@ -1,6 +1,6 @@
 import streamlit as st
 from app.utils.assets_loader import set_assets, render_header, render_footer
-
+from app.utils.texts import licencias_text
 
 def render_offers():
     st.title("Ofertas Actuales en el Mercado")
@@ -20,4 +20,5 @@ if __name__ == "__main__":
     st.set_page_config(page_title="Ofertas", page_icon="🔍", layout="wide")
     set_assets()
     render_offers()
+    licencias_text()
     render_footer()

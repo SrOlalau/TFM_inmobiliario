@@ -131,7 +131,14 @@ def range_describe(df, matched_columns):
             min_val = df[col].min()
             max_val = df[col].max()
             mean_val = df[col].mean()
-            column_ranges[col] = {'range': [min_val, max_val], 'default': mean_val}
+            perc_1 = df[col].quantile(0.01)
+            perc_95 = df[col].quantile(0.95)
+
+            column_ranges[col] = {
+                'range': [min_val, max_val],
+                'default': mean_val,
+                'range_80pct': [perc_1, perc_95]  # Rango del 10 al 90 percentil
+            }
 
         else:
             # Si la columna no es categórica ni numérica, la omitimos
