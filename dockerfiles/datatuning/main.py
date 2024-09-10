@@ -102,7 +102,7 @@ def data_tuning():
     Filas en la tabla final: {filas_finales}
     Filas eliminadas por precio inválido: {filas_eliminadas_precio}
     Filas eliminadas por mt2 inválido: {filas_eliminadas_mt2}
-    Total de filas eliminadas: {filas_originales - filas_finales}"""
+    Total de filas eliminadas: {filas_originales - filas_finales} """
     
     send_telegram_message(resumen)
     print(resumen)
