@@ -16,6 +16,24 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 
 warnings.filterwarnings('ignore')
 
+mejor_cv = {
+    'venta': {
+        'bootstrap': False,
+        'criterion': 'squared_error',
+        'max_depth': 20,
+        'max_features': 0.2,
+        'min_samples_split': 2,
+        'n_estimators': 150
+    },
+    'alquiler': {
+        'bootstrap': False,
+        'criterion': 'squared_error',
+        'max_depth': 50,
+        'max_features': 0.5,
+        'min_samples_split': 2,
+        'n_estimators': 150
+    }
+}
 
 # Función de preprocesamiento general
 def divide_dataset_bycategory(df, cat_cols_split_on=None):
@@ -189,10 +207,15 @@ def create_preprocessing_pipeline(df, target):
     return preprocessor
 
 
-# Junta preprocessor con modelo en un pipeline
-def create_pipeline(preprocessor):
-    # Definir el modelo de RandomForest
-    model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
+def create_pipeline(preprocessor, dummy_info):
+    # Extraer el valor de dummy_info para seleccionar los parámetros del diccionario mejor_cv
+    tipo_modelo = dummy_info[1]  # Aquí asumimos que dummy_info es una tupla como ('alquiler_venta', 'venta')
+    
+    # Obtener los parámetros del modelo dependiendo del valor de 'tipo_modelo'
+    params_modelo = mejor_cv[tipo_modelo]
+    
+    # Definir el modelo de RandomForest con los parámetros correctos
+    model = RandomForestRegressor(**params_modelo)
 
     # Crear el pipeline que combina el preprocesador y el modelo
     pipeline = Pipeline(steps=[
@@ -204,12 +227,12 @@ def create_pipeline(preprocessor):
 
 
 # Función para entrenar el primer modelo
-def train_first_model(df, target):
+def train_first_model(df, target, dummy_info):
     # Crear el preprocesador
     preprocessor = create_preprocessing_pipeline(df, target)
 
-    # Crear el pipeline completo
-    pipeline = create_pipeline(preprocessor)
+    # Crear el pipeline completo usando dummy_info
+    pipeline = create_pipeline(preprocessor, dummy_info=dummy_info)
 
     # Dividir en conjunto de entrenamiento y prueba
     X = df.drop(columns=[target])
@@ -238,7 +261,6 @@ def train_first_model(df, target):
 
 
 
-# Función para entrenar el modelo final con las 50 mejores variables
 def train_final_model(df, target, top_features, dummy_info=None):
     # Validate and match the top features with the original DataFrame columns
     matched_columns = validate_var_names(df, top_features)
@@ -252,8 +274,8 @@ def train_final_model(df, target, top_features, dummy_info=None):
     # Crear el preprocesador
     preprocessor = create_preprocessing_pipeline(df_filtered, target)
 
-    # Crear el pipeline completo
-    pipeline = create_pipeline(preprocessor)
+    # Crear el pipeline completo, pasando dummy_info para seleccionar el tipo de modelo
+    pipeline = create_pipeline(preprocessor, dummy_info)
 
     # Dividir en conjunto de entrenamiento y prueba
     X = df_filtered.drop(columns=[target])
@@ -294,7 +316,7 @@ def train_final_model(df, target, top_features, dummy_info=None):
 
 # Función principal para ejecutar el proceso completo
 def main(target='precio', dummies=['alquiler_venta']):
-    # Construir la ruta relativa al archivo CSV y cargar los datos
+    # Cargar los datos
     script_dir = os.path.dirname(os.path.abspath(__file__))
     script_dir = os.path.join(script_dir, '../datamunging/consolidated_data.csv')
 
@@ -304,10 +326,13 @@ def main(target='precio', dummies=['alquiler_venta']):
     dummy_dfs = divide_dataset_bycategory(df, dummies)
 
     for dummy_info, val, df_dummy in dummy_dfs:
-        print(f"Entrenando modelos para {dummy_info}={val}..." if dummy_info else "Entrenando modelo general...")
+        if dummy_info and val:
+            print(f"Entrenando modelos para {dummy_info}={val}...")
+        else:
+            print("Entrenando modelo general...")
 
         # Entrenar el primer modelo y obtener las 50 características más importantes
-        top_50_features = train_first_model(df_dummy, target)
+        top_50_features = train_first_model(df_dummy, target, dummy_info=(dummy_info, val))
 
         # Entrenar el modelo final usando las 50 mejores características
         train_final_model(df_dummy, target, top_50_features, dummy_info=(dummy_info, val))
