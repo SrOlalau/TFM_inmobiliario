@@ -221,7 +221,7 @@ def main():
     conn_target = connect_db("datos_limpios", "datos_limpios", "datos_limpios", "10.1.2.2", "5439")
 
     # Variable para activar o desactivar el filtro de 3 días
-    use_recent_days_filter = True
+    use_recent_days_filter = False
     recent_days = 3
 
     try:
