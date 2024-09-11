@@ -82,12 +82,17 @@ def data_tuning():
 
     df = df_final
 
+    # Primero, rellenamos los valores NaN en 'plataforma'
     df['plataforma'] = df['plataforma'].fillna('Pisos')
-    df = df.drop(columns=['publicado_hace','plataforma'])
+
     df['fecha_extract'] = pd.to_datetime(df['fecha_extract'], format='%Y-%m-%d')
     
-    # Cambio en el cálculo de mes_publicado
-    df['mes_publicado'] = df['fecha_extract'].dt.month
+    # Cálculo de mes_publicado
+    fecha_mas_antigua = df['fecha_extract'].min()
+    df['mes_publicado'] = (df['fecha_extract'].dt.to_period('M') - fecha_mas_antigua.to_period('M')).apply(lambda x: x.n + 1)
+
+    # Ahora que hemos creado todas las columnas necesarias, eliminamos las que no queremos
+    df = df.drop(columns=['publicado_hace', 'plataforma', 'raw_json', 'fuente_datos'])
 
     if 'id' in df.columns:
         df = df.drop(columns=['id'])
