@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from collections import Counter
+import os
 
 
 class POICalculator:
@@ -67,8 +68,8 @@ class POICalculator:
         # Calcular POI counts dentro del radio
         for count_var in poi_counts:
             parts = count_var.split('_')
-            poi_type = parts[1]
-            radius = float(parts[2].replace('km', ''))
+            poi_type = '_'.join(parts[1:-1])
+            radius = float(parts[-1].replace('km', ''))
 
             if poi_type not in self.poi_types:
                 raise ValueError(f"POI type '{poi_type}' not found in available POIs.")
@@ -97,7 +98,9 @@ class POICalculator:
 
 def main():
     # Ruta del archivo de POIs
-    POI_path = './data/POI/points_of_interest_ES.csv'
+    script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    POI_path = os.path.join(script_dir, 'data/POI/points_of_interest_ES.csv')
+    print(POI_path)
 
     # Inicializar el calculador de POIs
     poi_calculator = POICalculator(POI_path)
@@ -105,7 +108,12 @@ def main():
     # Ejemplo de uso: Calcular métricas para un punto específico
     latitude = 41.397894
     longitude = 2.143347
-    variables_to_calculate = ['POI_pharmacy_5km', 'POI_school_5km', 'closest_bus_station']
+    variables_to_calculate = ['POI_pharmacy_5km',
+                              'POI_school_5km',
+                              'closest_bus_station',
+                              'POI_bar_5km',
+                              'POI_waste_disposal_5km',
+                              'POI_stop_position_3km', ]
 
     # Calcular estimaciones
     results = poi_calculator.calculate_point_estimations(latitude, longitude, variables_to_calculate)

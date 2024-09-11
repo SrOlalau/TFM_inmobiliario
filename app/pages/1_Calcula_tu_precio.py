@@ -5,6 +5,8 @@ import pgeocode
 from app.utils.data_loader import cargar_modelo  # Importar la función desde el módulo data_loader
 from app.utils.assets_loader import set_assets, render_footer
 from app.utils.data_processor import select_lat_lon
+from app.utils.app_poi_calculator import POICalculator
+
 
 # Definir las rutas de los modelos
 MODEL_DIR = './app/models'
@@ -15,6 +17,26 @@ MODEL_VENTA_PATH = os.path.join(MODEL_DIR, 'random_forest_pipeline_alquiler_vent
 pipeline_alquiler, features_alquiler = cargar_modelo(MODEL_ALQUILER_PATH)
 pipeline_venta, features_venta = cargar_modelo(MODEL_VENTA_PATH)
 
+
+# Ruta del archivo de POIs
+script_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+POI_PATH = os.path.join(script_dir, 'data/POI/points_of_interest_ES.csv')
+
+# Inicializar el calculador de POIs
+poi_calculator = POICalculator(POI_PATH)
+
+def obtener_variables_poi(features):
+    """
+    Extrae las variables relacionadas con POI desde las características del modelo.
+
+    Args:
+    features (dict): Diccionario de características del modelo.
+
+    Returns:
+    list: Lista de variables relacionadas con POI.
+    """
+    poi_vars = [var for var in features['options_range'].keys() if 'POI' in var or 'closest' in var]
+    return poi_vars
 
 # Función para mostrar selectores de entrada basados en los rangos de características
 def mostrar_inputs(features, variables_to_show=None):
@@ -73,7 +95,7 @@ def mostrar_inputs(features, variables_to_show=None):
             user_input[col] = features['options_range'][col]['default']
 
     # Asegurarse de que 'mes_publicado' esté configurado como None si no está en la lista filtrada
-    user_input['mes_publicado'] = None
+    user_input['mes_publicado'] = 12
     return user_input
 
 
@@ -104,10 +126,18 @@ def generar_alternativas():
         # Mostrar las variables del modelo seleccionado
         if modelo_seleccionado == 'Alquiler':
             st.subheader('Variables del Modelo de Alquiler')
+            features = features_alquiler
             modelo = pipeline_alquiler
         elif modelo_seleccionado == 'Venta':
             st.subheader('Variables del Modelo de Venta')
+            features = features_venta
             modelo = pipeline_venta
+
+        # Obtener las variables relacionadas con POI
+        poi_vars = obtener_variables_poi(features)
+
+        # Calcular las métricas de POI usando la clase POICalculator
+        poi_results = poi_calculator.calculate_point_estimations(lat, lon, poi_vars)
 
 
         with st.form(key='pred_form'):
@@ -121,6 +151,13 @@ def generar_alternativas():
             input_usuario['latitude'] = lat
             input_usuario['longitude'] = lon
             input_usuario['CCAA'] = ccaa
+
+            # Incorporar las métricas de POI calculadas
+            for var in poi_vars:
+                # Si no existe usa default
+                # input_usuario[var] = poi_results.get(var, features['options_range'][var]['default'])
+                # Si no existe usa None
+                input_usuario[var] = poi_results.get(var)
 
             pred_button = st.form_submit_button("Hacer Predicción")
 
