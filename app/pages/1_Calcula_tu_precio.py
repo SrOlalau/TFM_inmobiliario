@@ -1,76 +1,151 @@
 import streamlit as st
-import folium as fl
-from streamlit_folium import st_folium
+import os
+import pandas as pd
 import pgeocode
-from app.utils.assets_loader import set_assets, render_header, render_footer
+from app.utils.data_loader import cargar_modelo  # Importar la función desde el módulo data_loader
+from app.utils.assets_loader import set_assets, render_footer
+from app.utils.data_processor import select_lat_lon
 
-# Inicializa el objeto de búsqueda por código postal
-nomi = pgeocode.Nominatim('es')
+# Definir las rutas de los modelos
+MODEL_DIR = './app/models'
+MODEL_ALQUILER_PATH = os.path.join(MODEL_DIR, 'random_forest_pipeline_alquiler_venta_Alquiler.pickle')
+MODEL_VENTA_PATH = os.path.join(MODEL_DIR, 'random_forest_pipeline_alquiler_venta_Venta.pickle')
 
-def geo_resp_to_text(res):
-    address = f"{res['place_name']}, {res['county_name']}, {res['state_name']} ({res['latitude']}, {res['longitude']})"
-    return address
+# Cargar los modelos
+pipeline_alquiler, features_alquiler = cargar_modelo(MODEL_ALQUILER_PATH)
+pipeline_venta, features_venta = cargar_modelo(MODEL_VENTA_PATH)
 
-def geo_search(codigo_postal):
-    res = nomi.query_postal_code([str(codigo_postal)])
-    return res.iloc[0]
 
-def validate_codigo_postal():
-    codigo_postal = st.text_input("Ingrese su código postal:")
+# Función para mostrar selectores de entrada basados en los rangos de características
+def mostrar_inputs(features, variables_to_show=None):
+    """
+    Genera los controles de entrada en la interfaz basados en las características.
 
-    if codigo_postal and (not codigo_postal.isdigit() or len(codigo_postal) != 5):
-        st.error("Ingrese un número válido")
-        return None
+    Args:
+    features (dict): Características y sus rangos de valores.
+    variables_to_show (list, optional): Lista de variables a mostrar. Si es None, muestra todas.
+
+    Returns:
+    dict: Entradas del usuario.
+    """
+    user_input = {}
+
+    # Determinar el orden de las variables: categóricas primero, luego numéricas
+    categorical_vars = []
+    numerical_vars = []
+
+    # Identificar variables categóricas y numéricas en las características proporcionadas
+    for col, info in features['options_range'].items():
+        if isinstance(info['range'][0], str):
+            categorical_vars.append(col)
+        elif isinstance(info['range'][0], (int, float)):
+            numerical_vars.append(col)
+
+    # Crear una lista para mostrar, comenzando con variables categóricas
+    if variables_to_show:
+        filtered_vars = [var for var in variables_to_show if var in categorical_vars + numerical_vars]
     else:
-        if codigo_postal:
-            resp = geo_search(codigo_postal)
-            if resp['country_code'] == 'ES':
-                st.success(f"Código postal válido: {codigo_postal}, ubicación {geo_resp_to_text(resp)}")
-                lat = resp['latitude']
-                lon = resp['longitude']
-                return codigo_postal, lat, lon
-            else:
-                st.error(f"Código postal no asociado a ubicación, intente con uno válido: {codigo_postal}")
-                return None
+        filtered_vars = categorical_vars + numerical_vars
+
+    # Agregar las variables filtradas a la visualización, comenzando con las categóricas
+    for col in filtered_vars:
+        if col in features['options_range']:
+            info = features['options_range'][col]
+            rango = info['range']
+            default = info['default']
+
+            if isinstance(rango, list) and isinstance(rango[0], str):
+                user_input[col] = st.selectbox(f'Seleccione {col}:', rango, index=rango.index(default))
+            elif isinstance(rango, list) and isinstance(rango[0], (int, float)):
+                rango80 = info['range_80pct']
+                # Verificar si las columnas requieren pasos de enteros
+                if col in ['banios', 'habitaciones']:
+                    user_input[col] = st.slider(f'Seleccione {col}:', min_value=int(rango80[0]),
+                                                max_value=int(rango80[1]),
+                                                value=int(default), step=1)
+                else:
+                    user_input[col] = st.slider(f'Seleccione {col}:', min_value=rango80[0], max_value=rango80[1],
+                                                value=default)
+
+    # Establecer valores predeterminados para variables no incluidas en la lista filtrada
+    for col in features['options_range']:
+        if col not in filtered_vars:
+            user_input[col] = features['options_range'][col]['default']
+
+    # Asegurarse de que 'mes_publicado' esté configurado como None si no está en la lista filtrada
+    user_input['mes_publicado'] = None
+    return user_input
 
 
-def select_location_on_map():
-    st.write("Seleccione un punto en el mapa:")
-    m = fl.Map(location=[40.4168, -3.7038], zoom_start=6)
-    m.add_child(fl.LatLngPopup())
-    map_data = st_folium(m, height=300, width=600)
+# Función para generar las alternativas de selección
+def generar_alternativas():
+    """
+    Genera la interfaz de selección para el usuario y maneja las predicciones.
 
-    if map_data.get("last_clicked"):
-        lat = map_data['last_clicked']['lat']
-        lon = map_data['last_clicked']['lng']
-        st.success(f"Ubicación seleccionada: ({lat}, {lon})")
-        return lat, lon
+    Returns:
+    None
+    """
+    # Llamada a la función para seleccionar la latitud y longitud
+    location = select_lat_lon()
+
+    input_features = ['mt2', 'habitaciones', 'banios']
+    input_df = None
+
+    # Verifica si la ubicación fue seleccionada
+    if location:
+        lat, lon, ccaa = location
+        st.write(f"Ubicación seleccionada: Latitud {lat}, Longitud {lon}. {ccaa}")
+
+        modelo_seleccionado = st.radio(
+            "Seleccione el modelo para ver las variables:",
+            ('Alquiler', 'Venta')
+        )
+
+        # Mostrar las variables del modelo seleccionado
+        if modelo_seleccionado == 'Alquiler':
+            st.subheader('Variables del Modelo de Alquiler')
+            modelo = pipeline_alquiler
+        elif modelo_seleccionado == 'Venta':
+            st.subheader('Variables del Modelo de Venta')
+            modelo = pipeline_venta
+
+
+        with st.form(key='pred_form'):
+            # Mostrar las variables del modelo seleccionado
+            if modelo_seleccionado == 'Alquiler':
+                input_usuario = mostrar_inputs(features_alquiler, variables_to_show=input_features)
+            elif modelo_seleccionado == 'Venta':
+                input_usuario = mostrar_inputs(features_venta, variables_to_show=input_features)
+
+            # Actualiza las entradas del usuario con latitud y longitud seleccionadas
+            input_usuario['latitude'] = lat
+            input_usuario['longitude'] = lon
+            input_usuario['CCAA'] = ccaa
+
+            pred_button = st.form_submit_button("Hacer Predicción")
+
+        # Botón para hacer la predicción
+        if pred_button:
+            # Convertir el input del usuario en un DataFrame para el modelo
+            input_df = pd.DataFrame([input_usuario])
+
+        if input_df is not None:
+            # Realizar la predicción
+            prediccion = modelo.predict(input_df)
+
+            # Mostrar el resultado de la predicción
+            st.subheader('Resultado de la Predicción:')
+            st.write(f'El valor estimado es: {prediccion[0]:.2f}')
     else:
-        st.warning("Por favor, seleccione un punto en el mapa.")
-        return None
+        st.warning("Seleccione una ubicación para proceder con la predicción.")
 
-def render_stats():
-    st.title("Estima un precio justo para tu vivienda")
-
-    # Opción de selección para método de ingreso de ubicación
-    option = st.radio("Ingresar ubicación con:", ("Código postal", "Seleccionar un punto en el mapa"))
-
-    if option == "Código postal":
-        codigo_postal_val = validate_codigo_postal()
-        if codigo_postal_val:
-            codigo_postal, lat, lon = codigo_postal_val
-            full_address = geo_search(codigo_postal)
-            st.text(f"Ubicación: {full_address}")
-    elif option == "Seleccionar un punto en el mapa":
-        location = select_location_on_map()
-        if location:
-            lat, lon = location
-            st.text(f"Coordenadas seleccionadas: ({lat}, {lon})")
-
-    st.markdown("_(Aquí se mostrarían los resultados de la predicción cuando el modelo esté integrado)_")
 
 if __name__ == "__main__":
     st.set_page_config(page_title="Estima precios", page_icon="🖥️", layout="wide")
     set_assets()
-    render_stats()
+    # Crear interfaz en Streamlit
+    st.title('Estimación de Modelos de Ventas y Alquiler')
+    # Llamar a la función principal que genera las alternativas
+    generar_alternativas()
+
     render_footer()
