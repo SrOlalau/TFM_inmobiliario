@@ -7,8 +7,10 @@ Proceso de ejecución contínua:
 2. Limpieza y juntar de los datos ( Ok en servidor ) | datamunging/datamunging.py (Ok en main )
 3. Añadir geo localizaciones a los datos (Ok en servidor) | data/geolocations/add_geoloc.py 
 4. Calcular las distancias de POI (Ok en main) | data/geolocations/calculate_POI_distance.py
-5. Datatuning (PENDIENTE en servidor) | datatuning/data_tuning.py ( Ok en main )
+5. Datatuning (Ok en servidor) | datatuning/data_tuning.py ( Ok en main )
 6. Añadir indices de criminalidad ( extra ) para obtener el dataset final que usaremos para streamline | En (PENDIENTE en main )
 
-8.Ejecutar el machine learning ( Pendiente ) | machinelearning/machinelearning.py ( Ok en main )
+8.Ejecutar el machine learning ( En proceso ) | machinelearning/machinelearning.py ( Ok en main )
+9.Streamlit ( Pendiente en server ) | app/0_inicio.py ( Casi ok en main ) ( Commando : python  -m streamlit run .\app\0_Inicio.py ) ( Ojo a la carpeta .streamlit y a añadir los modelos del machine learning )
+  9.1 Eda ( Pendiente en servidor ) | EDA/EDA_graph_table_gen.py ( Ok en main ) ( insertar lo del EDA dentro del stramlit )
 

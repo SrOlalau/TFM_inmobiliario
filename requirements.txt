@@ -5,6 +5,7 @@ asttokens==2.4.1
 attrs==24.2.0
 beautifulsoup4==4.12.3
 blinker==1.8.2
+branca==0.7.2
 bs4==0.0.2
 cachetools==5.5.0
 certifi==2024.6.2
@@ -24,6 +25,7 @@ decorator==5.1.1
 executing==2.0.1
 fastjsonschema==2.20.0
 Flask==3.0.3
+folium==0.17.0
 fonttools==4.53.1
 fuzzywuzzy==0.18.0
 git-filter-repo==2.45.0
@@ -104,6 +106,7 @@ soupsieve==2.5
 stack-data==0.6.3
 statsmodels==0.14.2
 streamlit==1.37.1
+streamlit_folium==0.22.0
 tenacity==8.5.0
 threadpoolctl==3.5.0
 toml==0.10.2
@@ -120,5 +123,6 @@ watchdog==4.0.2
 wcwidth==0.2.13
 Werkzeug==3.0.3
 wordcloud==1.9.3
+xyzservices==2024.9.0
 ydata-profiling==4.7.0
 zipp==3.20.0
