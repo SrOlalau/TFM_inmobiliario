@@ -2,19 +2,19 @@ import pandas as pd
 import numpy as np
 from sqlalchemy import create_engine, text
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 import optuna
-from optuna.integration import OptunaSearchCV
 import warnings
 import time
 from datetime import datetime
 import pickle
 import os
+from tqdm import tqdm
 
 warnings.filterwarnings('ignore')
 
@@ -56,7 +56,8 @@ def process_features(df, target):
     numerical_columns = df.select_dtypes(include=[np.number]).columns.drop(target)
     datetime_columns = df.select_dtypes(include=['datetime64']).columns
 
-    for col in categorical_columns:
+    print("Procesando características...")
+    for col in tqdm(categorical_columns, desc="Codificando variables categóricas"):
         df[col] = df[col].astype(str)
         unique_vals = df[col].nunique()
         if unique_vals > 20:
@@ -70,7 +71,7 @@ def process_features(df, target):
     scaler = StandardScaler()
     df[numerical_columns] = scaler.fit_transform(df[numerical_columns])
 
-    for col in datetime_columns:
+    for col in tqdm(datetime_columns, desc="Procesando columnas de fecha"):
         df[f'{col}_year'] = df[col].dt.year
         df[f'{col}_month'] = df[col].dt.month
         df[f'{col}_day'] = df[col].dt.day
@@ -115,6 +116,7 @@ def train_first_model(df, target):
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
+    print("Entrenando modelo inicial...")
     model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
     model.fit(X_train, y_train)
 
@@ -123,36 +125,37 @@ def train_first_model(df, target):
 
     return model, top_50_features, X_train, X_test, y_train, y_test
 
-def optimize_hyperparameters(X, y):
-    """Optimiza los hiperparámetros usando OptunaSearchCV."""
-    param_distributions = {
-        'n_estimators': optuna.distributions.IntDistribution(100, 1000),
-        'max_depth': optuna.distributions.IntDistribution(10, 100),
-        'min_samples_split': optuna.distributions.IntDistribution(2, 10),
-        'min_samples_leaf': optuna.distributions.IntDistribution(1, 10),
-        'max_features': optuna.distributions.CategoricalDistribution(['sqrt', 'log2', None]),
-        'bootstrap': optuna.distributions.CategoricalDistribution([True, False])
+def objective(trial, X, y):
+    """Función objetivo para Optuna."""
+    params = {
+        'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
+        'max_depth': trial.suggest_int('max_depth', 10, 100),
+        'min_samples_split': trial.suggest_int('min_samples_split', 2, 10),
+        'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 10),
+        'max_features': trial.suggest_categorical('max_features', ['sqrt', 'log2', None]),
+        'bootstrap': trial.suggest_categorical('bootstrap', [True, False])
     }
+    
+    model = RandomForestRegressor(**params, random_state=42, n_jobs=-1)
+    return -np.mean(cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error', n_jobs=-1))
 
-    optuna_search = OptunaSearchCV(
-        RandomForestRegressor(random_state=42, n_jobs=-1),
-        param_distributions,
-        n_trials=75,
-        cv=5,
-        n_jobs=-1,
-        random_state=42
-    )
-
-    optuna_search.fit(X, y)
+def optimize_hyperparameters(X, y):
+    """Optimiza los hiperparámetros usando Optuna."""
+    print("Optimizando hiperparámetros...")
+    study = optuna.create_study(direction='minimize')
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=75, show_progress_bar=True)
     
     print("Mejores hiperparámetros encontrados:")
-    print(optuna_search.best_params_)
-    return optuna_search.best_estimator_
+    print(study.best_params)
+    return study.best_params
 
-def train_and_evaluate_model(X_train, X_test, y_train, y_test, model):
-    """Evalúa el rendimiento del modelo."""
+def train_and_evaluate_model(X_train, X_test, y_train, y_test, best_params):
+    """Entrena el modelo con los mejores hiperparámetros y evalúa su rendimiento."""
+    print("Entrenando modelo final...")
+    model = RandomForestRegressor(**best_params, random_state=42, n_jobs=-1)
     model.fit(X_train, y_train)
     
+    print("Evaluando modelo...")
     y_pred = model.predict(X_test)
     mae = mean_absolute_error(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
@@ -176,6 +179,42 @@ def train_and_evaluate_model(X_train, X_test, y_train, y_test, model):
 
     return model, feature_importances
 
+def export_model(model, category, base_dir='/resultado'):
+    """
+    Exporta el modelo entrenado a un archivo pickle.
+    
+    Args:
+    model: El modelo entrenado para exportar.
+    category: La categoría del modelo (venta o alquiler).
+    base_dir: El directorio base donde se guardará el modelo.
+    
+    Returns:
+    str: La ruta completa donde se guardó el modelo.
+    """
+    directories = [
+        base_dir,
+        '/app/resultado',
+        os.path.join(os.getcwd(), 'resultado'),
+        os.path.expanduser('~/resultado')
+    ]
+    
+    for directory in directories:
+        try:
+            os.makedirs(directory, exist_ok=True)
+            model_filename = f'modelo_{category}.pickle'
+            full_path = os.path.join(directory, model_filename)
+            
+            print(f"Guardando modelo en {full_path}...")
+            with open(full_path, 'wb') as f:
+                pickle.dump(model, f)
+            
+            print(f"Modelo guardado exitosamente en: {full_path}")
+            return full_path
+        except Exception as e:
+            print(f"No se pudo guardar en {directory}. Error: {str(e)}")
+    
+    raise Exception("No se pudo guardar el modelo en ninguna ubicación.")
+
 def main(target='precio', category='venta'):
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
@@ -193,25 +232,24 @@ def main(target='precio', category='venta'):
     X_train_top = X_train[top_50_features]
     X_test_top = X_test[top_50_features]
 
-    best_model = optimize_hyperparameters(X_train_top, y_train)
+    best_params = optimize_hyperparameters(X_train_top, y_train)
 
-    final_model, feature_importances = train_and_evaluate_model(X_train_top, X_test_top, y_train, y_test, best_model)
+    final_model, feature_importances = train_and_evaluate_model(X_train_top, X_test_top, y_train, y_test, best_params)
 
     print("\nResumen del modelo:")
     print(f"Número de características utilizadas: {len(top_50_features)}")
     print(f"Tamaño del conjunto de entrenamiento: {X_train_top.shape}")
     print(f"Tamaño del conjunto de prueba: {X_test_top.shape}")
     print("\nMejores hiperparámetros:")
-    for param, value in best_model.get_params().items():
+    for param, value in best_params.items():
         print(f"{param}: {value}")
 
-    # Exportar el modelo
-    output_dir = '/resultado'
-    os.makedirs(output_dir, exist_ok=True)
-    model_filename = f'modelo_{category}.pickle'
-    with open(os.path.join(output_dir, model_filename), 'wb') as f:
-        pickle.dump(final_model, f)
-    print(f"\nModelo guardado en: {os.path.join(output_dir, model_filename)}")
+    try:
+        saved_path = export_model(final_model, category)
+        print(f"Modelo guardado en: {saved_path}")
+    except Exception as e:
+        print(f"Error al guardar el modelo: {str(e)}")
+        print("El modelo no se pudo guardar, pero el entrenamiento se completó.")
 
     end_time = time.time()
     elapsed_time = end_time - start_time
