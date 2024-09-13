@@ -190,7 +190,7 @@ def export_model(model, category, base_dir='/resultado'):
     
     raise Exception("No se pudo guardar el modelo en ninguna ubicación.")
 
-def main(target='precio', category='venta'):
+def main(target='precio', category='alquiler'):
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
 
