@@ -3,11 +3,9 @@ import numpy as np
 from sqlalchemy import create_engine, text
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.impute import SimpleImputer
-from sklearn.compose import ColumnTransformer
-from sklearn.pipeline import Pipeline
 import optuna
 import warnings
 import time
@@ -15,6 +13,7 @@ from datetime import datetime
 import pickle
 import os
 from tqdm import tqdm
+import gc
 
 warnings.filterwarnings('ignore')
 
@@ -28,8 +27,8 @@ DB_DEST = {
     "TABLE": "Datos_finales"
 }
 
-def load_data_from_postgres():
-    """Carga los datos desde PostgreSQL."""
+def load_data_from_postgres(category):
+    """Carga los datos desde PostgreSQL filtrando por categoría."""
     connection_string = f"postgresql://{DB_DEST['USER']}:{DB_DEST['PASSWORD']}@{DB_DEST['HOST']}:{DB_DEST['PORT']}/{DB_DEST['NAME']}"
     engine = create_engine(connection_string)
     
@@ -38,15 +37,10 @@ def load_data_from_postgres():
         result = connection.execute(query)
         date_columns = [row[0] for row in result]
 
-    query = f'SELECT * FROM "{DB_DEST["TABLE"]}"'
-    df = pd.read_sql(query, engine, parse_dates=date_columns)
+    query = f'SELECT * FROM "{DB_DEST["TABLE"]}" WHERE alquiler_venta = :category'
+    df = pd.read_sql(query, engine, params={'category': category}, parse_dates=date_columns)
     print(f"Tamaño del DataFrame cargado: {df.shape}")
     return df
-
-def divide_dataset_bycategory(df, category):
-    """Divide el dataset por categorías."""
-    df_subset = df[df['alquiler_venta'] == category].copy()
-    return df_subset
 
 def process_features(df, target):
     """Preprocesa las características del DataFrame."""
@@ -67,14 +61,16 @@ def process_features(df, target):
             le = LabelEncoder()
             df[col] = le.fit_transform(df[col])
             label_encoders[col] = le
+            df[col] = df[col].astype(np.int8)  # Reducir tamaño de tipo de dato
 
     scaler = StandardScaler()
     df[numerical_columns] = scaler.fit_transform(df[numerical_columns])
+    df[numerical_columns] = df[numerical_columns].astype(np.float32)  # Reducir tamaño de tipo de dato
 
     for col in tqdm(datetime_columns, desc="Procesando columnas de fecha"):
-        df[f'{col}_year'] = df[col].dt.year
-        df[f'{col}_month'] = df[col].dt.month
-        df[f'{col}_day'] = df[col].dt.day
+        df[f'{col}_year'] = df[col].dt.year.astype(np.int16)
+        df[f'{col}_month'] = df[col].dt.month.astype(np.int8)
+        df[f'{col}_day'] = df[col].dt.day.astype(np.int8)
         columns_to_drop.append(col)
 
     for col in df.columns:
@@ -83,31 +79,6 @@ def process_features(df, target):
 
     df = df.drop(columns=columns_to_drop)
     return df, scaler, label_encoders
-
-def create_preprocessing_pipeline(df, target):
-    """Crea un pipeline de preprocesamiento para las variables independientes."""
-    categorical_columns = df.select_dtypes(include=['object']).columns
-    numerical_columns = df.select_dtypes(include=[np.number]).columns.drop(target)
-
-    low_cardinality_cols = [col for col in categorical_columns if df[col].nunique() <= 20]
-
-    categorical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore'))
-    ])
-
-    numerical_transformer = Pipeline(steps=[
-        ('imputer', SimpleImputer(strategy='mean')),
-        ('scaler', StandardScaler())
-    ])
-
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ('num', numerical_transformer, numerical_columns),
-            ('cat', categorical_transformer, low_cardinality_cols)
-        ])
-
-    return preprocessor
 
 def train_first_model(df, target):
     """Entrena un modelo inicial y selecciona las características más importantes."""
@@ -123,7 +94,11 @@ def train_first_model(df, target):
     feature_importances = pd.Series(model.feature_importances_, index=X.columns)
     top_50_features = feature_importances.nlargest(50).index
 
-    return model, top_50_features, X_train, X_test, y_train, y_test
+    # Liberar memoria eliminando el modelo inicial
+    del model
+    gc.collect()
+
+    return top_50_features, X_train, X_test, y_train, y_test
 
 def objective(trial, X, y):
     """Función objetivo para Optuna."""
@@ -169,14 +144,14 @@ def train_and_evaluate_model(X_train, X_test, y_train, y_test, best_params):
     feature_importances = pd.Series(model.feature_importances_, index=X_train.columns).sort_values(ascending=False)
     print("\nTop 10 características más importantes:")
     print(feature_importances.head(10))
-
+    
     print("\nAlgunas predicciones de RandomForest:")
     random_indices = np.random.choice(range(len(y_test)), size=6, replace=False)
     for idx in random_indices:
         real = y_test.iloc[idx]
         pred = y_pred[idx]
         print(f"Precio real: {real}, Precio predicho: {pred}")
-
+    
     return model, feature_importances
 
 def export_model(model, category, base_dir='/resultado'):
@@ -219,18 +194,22 @@ def main(target='precio', category='venta'):
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
 
-    df = load_data_from_postgres()
+    df = load_data_from_postgres(category)
     
-    df_category = divide_dataset_bycategory(df, category)
-
     print(f"\nEntrenando modelo para {category}...")
 
-    df_processed, _, _ = process_features(df_category, target)
+    df_processed, _, _ = process_features(df, target)
+    del df  # Liberar memoria
+    gc.collect()
 
-    _, top_50_features, X_train, X_test, y_train, y_test = train_first_model(df_processed, target)
+    top_50_features, X_train, X_test, y_train, y_test = train_first_model(df_processed, target)
+    del df_processed  # Liberar memoria
+    gc.collect()
 
     X_train_top = X_train[top_50_features]
     X_test_top = X_test[top_50_features]
+    del X_train, X_test  # Liberar memoria
+    gc.collect()
 
     best_params = optimize_hyperparameters(X_train_top, y_train)
 
@@ -250,6 +229,10 @@ def main(target='precio', category='venta'):
     except Exception as e:
         print(f"Error al guardar el modelo: {str(e)}")
         print("El modelo no se pudo guardar, pero el entrenamiento se completó.")
+
+    # Liberar memoria final
+    del X_train_top, X_test_top, y_train, y_test, final_model, feature_importances
+    gc.collect()
 
     end_time = time.time()
     elapsed_time = end_time - start_time
