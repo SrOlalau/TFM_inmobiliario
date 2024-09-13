@@ -5,7 +5,6 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-from sklearn.impute import SimpleImputer
 import optuna
 import warnings
 import time
@@ -37,7 +36,8 @@ def load_data_from_postgres(category):
         result = connection.execute(query)
         date_columns = [row[0] for row in result]
 
-    query = f'SELECT * FROM "{DB_DEST["TABLE"]}" WHERE alquiler_venta = :category'
+    # Envolver la consulta con text() para usar parámetros nombrados
+    query = text(f'SELECT * FROM "{DB_DEST["TABLE"]}" WHERE alquiler_venta = :category')
     df = pd.read_sql(query, engine, params={'category': category}, parse_dates=date_columns)
     print(f"Tamaño del DataFrame cargado: {df.shape}")
     return df
@@ -118,7 +118,7 @@ def optimize_hyperparameters(X, y):
     """Optimiza los hiperparámetros usando Optuna."""
     print("Optimizando hiperparámetros...")
     study = optuna.create_study(direction='minimize')
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=1, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=75, show_progress_bar=True)
     
     print("Mejores hiperparámetros encontrados:")
     print(study.best_params)
