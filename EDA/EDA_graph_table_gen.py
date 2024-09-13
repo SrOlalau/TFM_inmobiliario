@@ -15,8 +15,8 @@ pio.templates.default = "custom_theme"
 
 
 # Ruta del archivo de datos y carpeta de gráficos
-DATA_PATH = '../datamunging/consolidated_data.csv'
-GRAPHICS_FOLDER = './graficos'
+DATA_PATH = './datamunging/consolidated_data.csv'
+GRAPHICS_FOLDER = './app/static/graphs'
 
 NAMES = {'precio': 'Precio',
          'habitaciones': 'Habitaciones',
