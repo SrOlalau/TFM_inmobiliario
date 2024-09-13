@@ -242,4 +242,4 @@ def main(target='precio', category='alquiler'):
 
 if __name__ == '__main__':
     # Cambia 'venta' por 'alquiler' si quieres entrenar el modelo para alquiler
-    main(category='venta')
+    main(category='alquiler')
