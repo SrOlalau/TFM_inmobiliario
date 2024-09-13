@@ -7,8 +7,7 @@ from data.criminalidad import indice_criminalidad
 from datatuning import data_tuning
 from machinelearning import machine_learning
 from web_scraping_scripts import web_scraping_pisos, web_scraping_trovit
-from datetime import datetime
-import time
+from EDA import EDA_graph_table_gen
 
 def scraping():
     # Funciones que hacen web scraping
@@ -30,6 +29,9 @@ def preprocesado():
 def datatuning():
     data_tuning.main()
 
+def EDA():
+    EDA_graph_table_gen.main()
+
 def ML():
     # Modelos de predicción de variable objetivo
     machine_learning.main()
@@ -45,6 +47,7 @@ if __name__ == '__main__':
     # Después de hacer el scrpaping diario, vuelve a juntar todos los csv y ejecuta datamunging
     preprocesado()
     datatuning()
+    EDA()
     ML()
 
     
