@@ -13,6 +13,7 @@ import pickle
 import os
 from tqdm import tqdm
 import gc
+import requests  # Importar requests para enviar mensajes a Telegram
 
 warnings.filterwarnings('ignore')
 
@@ -25,6 +26,24 @@ DB_DEST = {
     "PORT": "5444",
     "TABLE": "Datos_finales"
 }
+
+# Configuración de Telegram
+TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
+TELEGRAM_CHAT_ID = '297175679'
+
+def send_telegram_message(message):
+    """Envía un mensaje a un chat de Telegram."""
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'text': message
+    }
+    try:
+        response = requests.post(url, data=payload)
+        response.raise_for_status()
+        print("Mensaje enviado a Telegram.")
+    except Exception as e:
+        print(f"Error al enviar mensaje a Telegram: {str(e)}")
 
 def load_data_from_postgres(category):
     """Carga los datos desde PostgreSQL filtrando por categoría."""
@@ -112,13 +131,16 @@ def objective(trial, X, y):
     }
     
     model = RandomForestRegressor(**params, random_state=42, n_jobs=-1)
-    return -np.mean(cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error', n_jobs=-1))
+    score = -np.mean(cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error', n_jobs=-1))
+    del model
+    gc.collect()
+    return score
 
 def optimize_hyperparameters(X, y):
     """Optimiza los hiperparámetros usando Optuna."""
     print("Optimizando hiperparámetros...")
     study = optuna.create_study(direction='minimize')
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=51, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=30, show_progress_bar=True)
     
     print("Mejores hiperparámetros encontrados:")
     print(study.best_params)
@@ -194,6 +216,9 @@ def main(target='precio', category='alquiler'):
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
 
+    # Enviar mensaje de inicio a Telegram
+    send_telegram_message(f"Iniciando machine learning de {category}")
+
     df = load_data_from_postgres(category)
     
     print(f"\nEntrenando modelo para {category}...")
@@ -229,6 +254,22 @@ def main(target='precio', category='alquiler'):
     except Exception as e:
         print(f"Error al guardar el modelo: {str(e)}")
         print("El modelo no se pudo guardar, pero el entrenamiento se completó.")
+
+    # Construir mensaje de resumen para Telegram
+    num_features_used = len(top_50_features)
+    training_set_size = X_train_top.shape
+    test_set_size = X_test_top.shape
+
+    summary_message = "Machine learning finalizado\n\nResumen del modelo:\n"
+    summary_message += f"Número de características utilizadas: {num_features_used}\n"
+    summary_message += f"Tamaño del conjunto de entrenamiento: {training_set_size}\n"
+    summary_message += f"Tamaño del conjunto de prueba: {test_set_size}\n"
+    summary_message += "\nMejores hiperparámetros:\n"
+    for param, value in best_params.items():
+        summary_message += f"{param}: {value}\n"
+
+    # Enviar mensaje de finalización a Telegram
+    send_telegram_message(summary_message)
 
     # Liberar memoria final
     del X_train_top, X_test_top, y_train, y_test, final_model, feature_importances
