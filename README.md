@@ -41,7 +41,6 @@ Cada paso del proyecto tiene su propia base de datos independiente para mantener
   - DB_HOST = `10.1.2.2`
   - DB_PORT = `5438`
   - DB_Table_name = `points_of_interest`
-
 - Base de datos para el data munging:
   - DB_NAME = `datos_limpios`
   - DB_USER = `datos_limpios`
@@ -50,7 +49,7 @@ Cada paso del proyecto tiene su propia base de datos independiente para mantener
   - DB_PORT = `5439`
   - DB_Table_name = `consolidated_data`
 
- - Base de datos para añadir las geo localizaciones:
+- Base de datos para añadir las geo localizaciones:
   - DB_NAME = `geoloc`
   - DB_USER = `geoloc`
   - DB_PASSWORD = `geoloc`
@@ -58,7 +57,7 @@ Cada paso del proyecto tiene su propia base de datos independiente para mantener
   - DB_PORT = `5441`
   - DB_Table_name = `datos_limpios_con_geo`
 
- - Base de datos para la ingenieria de variables:
+- Base de datos para la ingenieria de variables:
   - DB_NAME = `geo_y_poi`
   - DB_USER = `geo_y_poi`
   - DB_PASSWORD = `geo_y_poi`
@@ -66,7 +65,7 @@ Cada paso del proyecto tiene su propia base de datos independiente para mantener
   - DB_PORT = `5442`
   - DB_Table_name = `datos_limpios_con_geo_y_poi`
 
- - Base de datos para el datatuning y de la cual se alimenta la aplicacion Streamlit:
+- Base de datos para el datatuning y de la cual se alimenta la aplicacion Streamlit:
   - DB_NAME = `datatuning`
   - DB_USER = `datatuning`
   - DB_PASSWORD = `datatuning`
@@ -83,15 +82,11 @@ El flujo de datos está cuidadosamente organizado en varios pasos, cada uno de e
 
 ### 3.1 Scraping de datos
 
-El primer paso del proyecto es el scraping de sitios web de propiedades (alquiler y venta). Los scripts se encuentran en la carpeta `scraping_pisos`, y se ejecutan dentro de un contenedor Docker que extrae los datos y los almacena en la base de datos `scraping_db`.
+El primer paso del proyecto es el scraping de sitios web de propiedades (alquiler y venta). Los scripts se encuentran en la carpeta `0.1_Scraping_pisos` y `0.2_Scraping_trovit`, y se ejecutan dentro de un contenedor Docker que extrae los datos y los almacena en la base de datos `scraping_pisos` y `scraping_trovit` de forma respectiva.
 
-- **Script principal:** `main.py`
-- **Base de datos:** `scraping_db`
-- **Contenedor Docker:** `dockerfile_pisos`
+### 3.2 Scraping de puntos de interés (POI)
 
-### 3.2 Añadir puntos de interés (POI)
-
-Después del scraping, el siguiente paso es añadir datos de puntos de interés (POI) cercanos a las propiedades utilizando APIs externas como OpenStreetMaps. Este proceso se maneja en el contenedor `dockerfile_geoloc` y se almacena en la base de datos `geoloc_db`.
+Después del scraping, el siguiente paso es scrapear datos de puntos de interés (POI) cercanos a las propiedades utilizando APIs externas como OpenStreetMaps. Este proceso se maneja en el contenedor `dockerfile_geoloc` y se almacena en la base de datos `geoloc_db`.
 
 - **Script principal:** `main.py`
 - **Base de datos:** `geoloc_db`
