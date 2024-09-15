@@ -97,6 +97,10 @@ def data_tuning():
     if 'id' in df.columns:
         df = df.drop(columns=['id'])
 
+    # Eliminamos la columna 'origen'
+    if 'origen' in df.columns:
+        df = df.drop(columns=['origen'])
+
     # Reemplazar la tabla completa
     df.to_sql(DB_DEST['TABLE'], engine_dest, if_exists='replace', index=False)
 
