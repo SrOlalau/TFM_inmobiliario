@@ -1,12 +1,12 @@
 # Nombre del flujo de trabajo. Puedes cambiarlo si lo deseas.
-name: machine_learning
+name: 4.Data_tunning
 
 # Variables de entorno globales. Modifica estos valores según tu configuración.
 env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
-  DOCKER_REPOSITORY: srolalau/machine_learning
+  DOCKER_REPOSITORY: srolalau/datatuning
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/machine_learning/dockerfile_machine_learning
+  DOCKERFILE_PATH: dockerfiles/4.Data_tunning/dockerfile_datatuning
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
@@ -16,7 +16,7 @@ on:
     # Solo se activará si hay cambios en la carpeta 'dockerfiles/test' o sus subcarpetas.
     # Modifica esta ruta si mueves tu Dockerfile a una ubicación diferente.
     paths:
-      - 'dockerfiles/machine_learning/**'
+      - 'dockerfiles/4.Data_tunning/**'
 
 # Define los trabajos que se ejecutarán
 jobs:

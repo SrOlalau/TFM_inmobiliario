@@ -1,12 +1,12 @@
 # Nombre del flujo de trabajo. Puedes cambiarlo si lo deseas.
-name: limpieza_datos
+name: 5.Machine_learning
 
 # Variables de entorno globales. Modifica estos valores según tu configuración.
 env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
-  DOCKER_REPOSITORY: srolalau/limpieza_datos
+  DOCKER_REPOSITORY: srolalau/machine_learning
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/limpieza_datos/dockerfile_limpieza_datos
+  DOCKERFILE_PATH: dockerfiles/5.Machine_learning/dockerfile_machine_learning
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
@@ -16,7 +16,7 @@ on:
     # Solo se activará si hay cambios en la carpeta 'dockerfiles/test' o sus subcarpetas.
     # Modifica esta ruta si mueves tu Dockerfile a una ubicación diferente.
     paths:
-      - 'dockerfiles/limpieza_datos/**'
+      - 'dockerfiles/5.Machine_learning/**'
 
 # Define los trabajos que se ejecutarán
 jobs:

@@ -1,12 +1,12 @@
 # Nombre del flujo de trabajo. Puedes cambiarlo si lo deseas.
-name: geoloc
+name: 0.3_Scraping_OpenStreetMaps
 
 # Variables de entorno globales. Modifica estos valores según tu configuración.
 env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
-  DOCKER_REPOSITORY: srolalau/geoloc
+  DOCKER_REPOSITORY: srolalau/osm
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/añadir_geo_localizaciones/dockerfile_geoloc
+  DOCKERFILE_PATH: dockerfiles/0.3_Scraping_OpenStreetMaps/dockerfile_osm
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
@@ -16,7 +16,7 @@ on:
     # Solo se activará si hay cambios en la carpeta 'dockerfiles/test' o sus subcarpetas.
     # Modifica esta ruta si mueves tu Dockerfile a una ubicación diferente.
     paths:
-      - 'dockerfiles/añadir_geo_localizaciones/**'
+      - 'dockerfiles/0.3_Scraping_OpenStreetMaps/**'
 
 # Define los trabajos que se ejecutarán
 jobs:

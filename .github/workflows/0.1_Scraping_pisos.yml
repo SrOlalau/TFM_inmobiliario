@@ -1,12 +1,12 @@
 # Nombre del flujo de trabajo. Puedes cambiarlo si lo deseas.
-name: datatuning
+name: 0.1_Scraping_pisos
 
 # Variables de entorno globales. Modifica estos valores según tu configuración.
 env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
-  DOCKER_REPOSITORY: srolalau/datatuning
+  DOCKER_REPOSITORY: srolalau/pisos
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/datatuning/dockerfile_datatuning
+  DOCKERFILE_PATH: dockerfiles/0.1_Scraping_pisos/dockerfile_pisos
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
@@ -16,7 +16,7 @@ on:
     # Solo se activará si hay cambios en la carpeta 'dockerfiles/test' o sus subcarpetas.
     # Modifica esta ruta si mueves tu Dockerfile a una ubicación diferente.
     paths:
-      - 'dockerfiles/datatuning/**'
+      - 'dockerfiles/0.1_Scraping_pisos/**'
 
 # Define los trabajos que se ejecutarán
 jobs:

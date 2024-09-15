@@ -1,12 +1,12 @@
 # Nombre del flujo de trabajo. Puedes cambiarlo si lo deseas.
-name: aplicacion
+name: 1.Data_munging
 
 # Variables de entorno globales. Modifica estos valores según tu configuración.
 env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
-  DOCKER_REPOSITORY: srolalau/aplicacion
+  DOCKER_REPOSITORY: srolalau/limpieza_datos
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/streamlit/dockerfile_streamlit
+  DOCKERFILE_PATH: dockerfiles/1.Data_munging/dockerfile_limpieza_datos
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
@@ -16,7 +16,7 @@ on:
     # Solo se activará si hay cambios en la carpeta 'dockerfiles/test' o sus subcarpetas.
     # Modifica esta ruta si mueves tu Dockerfile a una ubicación diferente.
     paths:
-      - 'dockerfiles/streamlit/**'
+      - 'dockerfiles/1.Data_munging/**'
 
 # Define los trabajos que se ejecutarán
 jobs:
