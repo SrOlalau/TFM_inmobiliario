@@ -2,13 +2,35 @@
 
 ## 1. Introducción
 
-Somos un equipo de entusiastas de la ciencia de datos y el desarrollo de software. Este proyecto tiene como objetivo crear un sistema que scrapee datos de múltiples sitios web de propiedades (venta/alquiler), los limpie, procese y aplique técnicas de Machine Learning para generar predicciones basadas en los datos recolectados. Además, hemos desarrollado una plataforma web usando **Streamlit** para visualizar y analizar los resultados de forma interactiva.
+Este proyecto es parte de nuestro **Trabajo de Fin de Máster (TFM)** para el programa **Máster en Data Science, Big Data & Business Analytics 2023-2024**. Hemos trabajado en equipo para desarrollar un sistema que scrapee datos de múltiples sitios web de propiedades (venta/alquiler), los limpie, procese y aplique técnicas de Machine Learning para generar predicciones basadas en los datos recolectados. Además, hemos desarrollado una plataforma web usando **Streamlit** para visualizar y analizar los resultados de manera interactiva.
 
-Este proyecto se puede replicar y escalar fácilmente gracias a su estructura modular y el uso de contenedores Docker, que permiten la separación y gestión independiente de cada etapa del proceso.
+El proyecto es completamente replicable y escalable gracias a su estructura modular, basada en contenedores Docker, que permite la gestión independiente de cada fase del proceso. Esto facilita la integración de nuevos datos o la modificación de cualquier parte del pipeline de forma eficiente.
+
+### Equipo de trabajo:
+
+A continuación, se presenta el equipo de desarrollo que ha trabajado en este proyecto, ordenado alfabéticamente:
+
+- **Manuel Castro Villegas**   
+  [GitHub](https://github.com/Manuelcastro97) | [LinkedIn](https://www.linkedin.com/in/manuelcastro97/)
+
+- **Iván Camilo Cortés Gómez**  
+  [GitHub](https://github.com/cvmilo0) | [LinkedIn](https://www.linkedin.com/in/camilo-cortes-gomez/)
+
+- **Diego Gloria Salamanca**  
+  [GitHub](https://github.com/Gloriuss) | [LinkedIn](https://www.linkedin.com/in/diego-gloria-salamanca/)
+
+- **Valentín Catalin Olalau**  
+  [GitHub](https://github.com/SrOlalau) | [LinkedIn](https://www.linkedin.com/in/valent%C3%ADn-catal%C3%ADn-olalau/)
+
+- **Álvaro Oñoro Moya**  
+  [GitHub](https://github.com/Ixelar) | [LinkedIn](https://linkedin.com/in/miembro5)
+
+- **Alonso Valdés González**  
+  [GitHub](https://github.com/Alonsomar) | [LinkedIn](https://www.linkedin.com/in/alonso-vald%C3%A9s-gonz%C3%A1lez-b44535135/)
 
 ## 2. Requisitos
 
-El proyecto requiere el uso de Docker para levantar varios contenedores que facilitan el scraping, el procesamiento de datos, y el almacenamiento en bases de datos independientes para cada paso del flujo de trabajo.
+El proyecto requiere el uso de Docker para facilitar la ejecución de los distintos componentes del pipeline de scraping, procesamiento y modelado de datos. Cada fase está contenida en un Docker independiente y se almacena en bases de datos PostgreSQL, también gestionadas en contenedores Docker.
 
 ### Requisitos del sistema:
 - **Docker** (última versión)
@@ -16,7 +38,7 @@ El proyecto requiere el uso de Docker para levantar varios contenedores que faci
 
 ### Configuración de PostgreSQL
 
-Cada paso del proyecto tiene su propia base de datos independiente para mantener los datos bien estructurados y facilitar la replicación del flujo de trabajo. Solo es necesario crear el contenedor de PostgreSQL, pues el código se encargará de crear las tablas si no existen y de gestionar correctamente las columnas con su tipo de dato correspondiente.
+Cada paso del proceso tiene su propia base de datos, lo que permite modularizar el flujo de trabajo y facilitar el control de los datos. Solo es necesario inicializar el contenedor PostgreSQL, ya que los scripts del proyecto se encargan de crear las tablas necesarias si no existen.
 
 - **Base de datos para scraping de pisos:**
   - DB_NAME: `scraping_pisos`
@@ -74,70 +96,67 @@ Cada paso del proyecto tiene su propia base de datos independiente para mantener
   - DB_PORT: `5444`
   - DB_Table_name: `Datos_finales`
 
-Puedes lanzar estos contenedores y configuraciones utilizando Docker Compose y los archivos correspondientes dentro del proyecto.
-
 ## 3. Flujo de datos
 
-El flujo de datos está cuidadosamente organizado en varios pasos, cada uno de ellos gestionado a través de un contenedor Docker específico, y conectado a una base de datos independiente para garantizar un procesamiento modular y eficiente. Todos los scripts, así como los Dockerfiles respectivos para construir los contenedores Docker, están en la carpeta `dockerfiles` organizados según el flujo de trabajo. Además, en la carpeta `Dockers_compose` tenemos los archivos `docker-compose` de cada parte del proyecto, para su ejecución de forma sencilla.
+El flujo de datos está cuidadosamente estructurado en varios pasos, con cada fase gestionada a través de un contenedor Docker independiente y conectada a su base de datos correspondiente. Esto garantiza un procesamiento modular y eficiente. Todos los scripts y Dockerfiles están organizados en la carpeta `dockerfiles`, mientras que los archivos `docker-compose` necesarios para la ejecución están en la carpeta `Dockers_compose`.
 
 ### 3.1 Scraping de datos
 
-El primer paso del proyecto es el scraping de sitios web de propiedades (alquiler y venta). Los scripts se encuentran en las carpetas `0.1_Scraping_pisos` y `0.2_Scraping_trovit`, y se ejecutan dentro de un contenedor Docker que extrae los datos y los almacena en las bases de datos `scraping_pisos` y `scraping_trovit` respectivamente.
+El primer paso del proyecto es el scraping de sitios web de propiedades (alquiler y venta). Los scripts se encuentran en las carpetas `0.1_Scraping_pisos` y `0.2_Scraping_trovit`, y se ejecutan dentro de contenedores Docker, almacenando los datos en las bases de datos `scraping_pisos` y `scraping_trovit` respectivamente.
 
 - **Ruta docker compose Pisos:** `Dockers_compose/0.1_Scraping_pisos.yaml`
 - **Ruta docker compose Trovit:** `Dockers_compose/0.2_Scraping_trovit.yaml`
 
 ### 3.2 Scraping de puntos de interés (POI)
 
-Después del scraping de los datos de alquiler y venta, el siguiente paso es scrapear datos de puntos de interés (POI). El script se encuentra en la carpeta `0.3_Scraping_OpenStreetMaps` y se ejecuta dentro de un contenedor Docker que extrae los datos y los almacena en la base de datos `scraping_openstreetmaps`.
+El siguiente paso consiste en obtener información geográfica sobre puntos de interés (POI) cercanos a las propiedades, como colegios, hospitales o transporte público, utilizando OpenStreetMaps. Los datos se almacenan en la base de datos `scraping_openstreetmaps`.
 
 - **Ruta docker compose:** `Dockers_compose/0.3_Scraping_OpenStreetMaps.yaml`
 
 ### 3.3 Limpieza y procesamiento de datos (Data munging)
 
-Una vez que se tienen los datos base y los POI, se procede con la limpieza y transformación de los datos. En este paso, los datos se procesan y se dejan listos para el análisis. El script se encuentra en la carpeta `1.Data_munging` y se ejecuta dentro de un contenedor Docker que almacena los datos en la base de datos `datos_limpios`.
+Aquí se procesan y limpian los datos obtenidos para eliminar duplicados, corregir valores y asegurarse de que están listos para el análisis. Los resultados se almacenan en la base de datos `datos_limpios`.
 
 - **Ruta docker compose:** `Dockers_compose/1.Data_munging.yaml`
 
 ### 3.4 Añadir geo localizaciones
 
-Durante este paso, se utilizan las coordenadas geográficas obtenidas previamente para mejorar los datos de las propiedades, añadiendo columnas adicionales con información de latitud y longitud. El script se encuentra en la carpeta `2.Añadir_geo_localizaciones` y se ejecuta dentro de un contenedor Docker que almacena los datos en la base de datos `geoloc`.
+Se añade la información de las coordenadas geográficas de las propiedades para complementar el análisis. Esta etapa se ejecuta en un contenedor Docker y se almacena en la base de datos `geoloc`.
 
 - **Ruta docker compose:** `Dockers_compose/2.Añadir_geo_localizaciones.yaml`
 
 ### 3.5 Ingeniería de variables
 
-Una vez que los datos de las propiedades tienen las coordenadas geográficas, se integran con los datos de POI para añadir información relevante sobre los lugares cercanos. El script se encuentra en la carpeta `3.Ingenieria_de_variables` y se ejecuta dentro de un contenedor Docker que almacena los datos en la base de datos `geo_y_poi`.
+En este paso se integran los datos de geolocalización y los POI para enriquecer el dataset con variables adicionales que describen las cercanías a puntos clave. Los datos enriquecidos se almacenan en la base de datos `geo_y_poi`.
 
 - **Ruta docker compose:** `Dockers_compose/3.Ingenieria_de_variables.yaml`
 
 ### 3.6 Data tuning
 
-Este paso involucra el ajuste y optimización de los datos para mejorar la calidad del modelo de Machine Learning, realizando ajustes en las variables seleccionadas. El script se encuentra en la carpeta `4.Data_tunning` y se ejecuta dentro de un contenedor Docker que almacena los datos en la base de datos `datatuning`.
+Se ajustan y optimizan las variables seleccionadas para mejorar el modelo de Machine Learning. Los resultados se almacenan en la base de datos `datatuning`.
 
 - **Ruta docker compose:** `Dockers_compose/4.Data_tunning.yaml`
 
 ### 3.7 Machine learning
 
-El último paso del proceso consiste en aplicar un modelo de Machine Learning (**Random Forest**) a los datos optimizados para predecir los precios de las propiedades basándose en las características extraídas. Este modelo se ejecuta dentro de un contenedor Docker y los resultados se almacenan en formato `.pickle` para que la aplicación Streamlit los utilice.
+Se aplica un modelo de **Random Forest** para predecir los precios de las propiedades, basado en las variables optimizadas. El modelo entrenado se almacena en formato `.pickle` para su uso en la aplicación Streamlit.
 
 - **Ruta docker compose:** `Dockers_compose/5.Machine_learning.yaml`
 
 ### 3.8 Aplicación Streamlit
 
-Este paso finaliza con la presentación de los resultados en una plataforma web interactiva usando **Streamlit**, donde los usuarios pueden consultar y analizar los datos procesados y los resultados del modelo de Machine Learning.
+La visualización interactiva de los resultados se realiza a través de una plataforma web desarrollada en **Streamlit**, donde se pueden explorar los datos procesados y los resultados del modelo.
 
 - **Ruta docker compose:** `Dockers_compose/6.App_streamlit.yaml`
 
 ## 4. Conclusiones
 
-Este proyecto muestra cómo se puede construir un pipeline completo de scraping, procesamiento de datos y Machine Learning de manera modular y escalable usando Docker. La separación de bases de datos y contenedores por etapas permite un control detallado sobre el flujo de datos, facilitando la réplica del proceso en otros contextos o la adaptación del proyecto a nuevos requisitos.
+Este proyecto demuestra cómo construir un pipeline completo de scraping, procesamiento de datos y Machine Learning de manera modular y escalable, usando contenedores Docker. La separación por etapas permite un control detallado sobre cada fase del proceso, facilitando la replicación y la adaptación a nuevos requisitos.
 
-Además, la plataforma Streamlit desarrollada para visualizar los resultados hace que sea fácil para cualquier usuario interactuar con los datos y obtener insights de manera rápida y eficiente. Si te interesa replicar este proyecto, asegúrate de seguir las instrucciones de configuración y ejecutar los scripts en el orden adecuado.
+La plataforma Streamlit hace que sea fácil interactuar con los datos y obtener insights valiosos de manera rápida y eficiente. Si estás interesado en replicar este proyecto, sigue las instrucciones y ejecuta los scripts en el orden adecuado.
 
-¡Esperamos que te sirva y que lo disfrutes!
+¡Esperamos que disfrutes el proyecto!
 
-Puedes visitar nuestra plataforma en el siguiente enlace:
+Visita nuestra plataforma en el siguiente enlace:
 
 [Accede a nuestra web](http://preciopiso.com/)
-
