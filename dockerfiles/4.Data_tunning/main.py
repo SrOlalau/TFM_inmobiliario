@@ -63,12 +63,30 @@ def data_tuning():
     filas_originales = len(df)
     print(f"Filas originales: {filas_originales}")
 
-    df['ccaa'] = df['ccaa'].replace({
-        'Malaga': 'malaga', 'Sevilla': 'sevilla', 'Granada': 'granada',
-        'Madrid': 'madrid', 'Barcelona': 'barcelona', 'vizcaya_bizkaia': 'bizkaia',
-        'Bizkaia': 'bizkaia', 'Cantabria': 'cantabria', 'Valencia': 'valencia',
-        'Alicante': 'alicante'
-    })
+    # Diccionario que mapea las ciudades a sus correspondientes CCAA en España
+    ciudad_a_ccaa = {
+        'sevilla': 'Andalucía',
+        'Sevilla': 'Andalucía',  
+        'malaga': 'Andalucía', 
+        'Malaga': 'Andalucía',
+        'cadiz': 'Andalucía', 
+        'granada': 'Andalucía', 
+        'Granada': 'Andalucía', 
+        'Barcelona': 'Cataluña',
+        'barcelona': 'Cataluña',
+        'Cantabria': 'Cantabria',
+        'cantabria': 'Cantabria', 
+        'Madrid': 'Comunidad de Madrid', 
+        'madrid': 'Comunidad de Madrid', 
+        'valencia': 'Comunidad Valenciana', 
+        'Valencia': 'Comunidad Valenciana', 
+        'Alicante': 'Comunidad Valenciana',
+        'Bizkaia': 'País Vasco', 
+        'vizcaya_bizkaia': 'País Vasco'
+    }
+
+    # Mapear las ciudades a sus respectivas CCAA
+    df['ccaa'] = df['ccaa'].map(ciudad_a_ccaa)
 
     # Filtrado de precios
     df_precio = df[~df['precio'].isin([0, np.inf, -np.inf]) & df['precio'].notna()]
