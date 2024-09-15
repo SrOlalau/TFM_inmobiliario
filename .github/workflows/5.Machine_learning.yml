@@ -6,7 +6,7 @@ env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
   DOCKER_REPOSITORY: srolalau/machine_learning
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/5.Machine_learning/dockerfile_machine_learning
+  DOCKERFILE_PATH: Dockerfiles/5.Machine_learning/dockerfile_machine_learning
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:

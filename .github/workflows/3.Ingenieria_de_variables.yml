@@ -6,7 +6,7 @@ env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
   DOCKER_REPOSITORY: srolalau/poi
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/3.Ingenieria_de_variables/dockerfile_poi
+  DOCKERFILE_PATH: Dockerfiles/3.Ingenieria_de_variables/dockerfile_poi
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:

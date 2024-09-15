@@ -6,7 +6,7 @@ env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
   DOCKER_REPOSITORY: srolalau/datatuning
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/4.Data_tunning/dockerfile_datatuning
+  DOCKERFILE_PATH: Dockerfiles/4.Data_tunning/dockerfile_datatuning
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
