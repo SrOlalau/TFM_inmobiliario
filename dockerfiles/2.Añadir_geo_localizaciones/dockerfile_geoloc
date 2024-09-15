@@ -5,15 +5,15 @@ FROM python:3.11.9
 WORKDIR /app
 
 # Copia el archivo de requisitos al contenedor
-COPY ./dockerfiles/añadir_geo_localizaciones/requisitos.txt /app/requisitos.txt
+COPY ./Dockerfiles/2.Añadir_geo_localizaciones/requisitos.txt /app/requisitos.txt
 
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requisitos.txt
 
-COPY ./dockerfiles/añadir_geo_localizaciones/geocode_cache.json /app/geocode_cache.json
+COPY ./Dockerfiles/2.Añadir_geo_localizaciones/geocode_cache.json /app/geocode_cache.json
 
 # Copia el archivo de Python al contenedor
-COPY ./dockerfiles/añadir_geo_localizaciones/main.py /app/main.py
+COPY ./Dockerfiles/2.Añadir_geo_localizaciones/main.py /app/main.py
 
 # Define el comando por defecto para listar archivos y ejecutar el script de entrada
 CMD ["python", "-u", "/app/main.py"]

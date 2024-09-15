@@ -5,13 +5,13 @@ FROM python:3.11.9
 WORKDIR /app
 
 # Copia el archivo de requisitos al contenedor
-COPY ./dockerfiles/POI/requisitos.txt /app/requisitos.txt
+COPY ./Dockerfiles/3.Ingenieria_de_variables/requisitos.txt /app/requisitos.txt
 
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requisitos.txt
 
 # Copia el archivo de Python al contenedor
-COPY ./dockerfiles/POI/main.py /app/main.py
+COPY ./Dockerfiles/3.Ingenieria_de_variables/main.py /app/main.py
 
 # Define el comando por defecto para listar archivos y ejecutar el script de entrada
 CMD ["python", "-u", "/app/main.py"]
