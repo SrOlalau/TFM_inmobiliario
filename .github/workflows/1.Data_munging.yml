@@ -6,7 +6,7 @@ env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
   DOCKER_REPOSITORY: srolalau/limpieza_datos
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: Dockerfiles/1.Data_munging/dockerfile_limpieza_datos
+  DOCKERFILE_PATH: dockerfiles/1.Data_munging/dockerfile_limpieza_datos
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:

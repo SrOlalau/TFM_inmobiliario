@@ -6,7 +6,7 @@ env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
   DOCKER_REPOSITORY: srolalau/pisos
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: Dockerfiles/0.1_Scraping_pisos/dockerfile_pisos
+  DOCKERFILE_PATH: dockerfiles/0.1_Scraping_pisos/dockerfile_pisos
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
