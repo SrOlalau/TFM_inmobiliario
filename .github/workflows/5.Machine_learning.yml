@@ -16,7 +16,7 @@ on:
     # Solo se activará si hay cambios en la carpeta 'dockerfiles/test' o sus subcarpetas.
     # Modifica esta ruta si mueves tu Dockerfile a una ubicación diferente.
     paths:
-      - 'dockerfiles/5.Machine_learning/**'
+      - 'Dockerfiles/5.Machine_learning/**'
 
 # Define los trabajos que se ejecutarán
 jobs:
