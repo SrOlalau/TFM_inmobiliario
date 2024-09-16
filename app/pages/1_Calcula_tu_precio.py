@@ -25,6 +25,13 @@ POI_PATH = os.path.join(script_dir, 'data/POI/points_of_interest_ES.csv')
 # Inicializar el calculador de POIs
 poi_calculator = POICalculator(POI_PATH)
 
+options_dict = {
+    'mt2': 'metros cuadrados',
+    'habitaciones': 'número de habitaciones',
+    'banios': 'número de baños'
+}
+
+
 def obtener_variables_poi(features):
     """
     Extrae las variables relacionadas con POI desde las características del modelo.
@@ -82,12 +89,19 @@ def mostrar_inputs(features, variables_to_show=None):
                 rango80 = info['range_80pct']
                 # Verificar si las columnas requieren pasos de enteros
                 if col in ['banios', 'habitaciones']:
-                    user_input[col] = st.slider(f'Seleccione {col}:', min_value=int(rango80[0]),
+                    user_input[col] = st.slider(f'Seleccione {options_dict[col]}:', min_value=int(rango80[0]),
                                                 max_value=int(rango80[1]),
                                                 value=int(default), step=1)
-                else:
-                    user_input[col] = st.slider(f'Seleccione {col}:', min_value=rango80[0], max_value=rango80[1],
-                                                value=default)
+                # Dentro de la función mostrar_inputs
+                elif col == 'mt2':
+                    # Cambiar a un slider que permita seleccionar un rango
+                    user_input[col] = st.slider(
+                        f'Seleccione el rango de {options_dict[col]}:',
+                        min_value=int(rango80[0]),
+                        max_value=int(rango80[1]),
+                        value=(int(default), int(default) + 10),  # Rango predeterminado
+                        step=1
+                    )
 
     # Establecer valores predeterminados para variables no incluidas en la lista filtrada
     for col in features['options_range']:
@@ -111,7 +125,8 @@ def generar_alternativas():
     location = select_lat_lon()
 
     input_features = ['mt2', 'habitaciones', 'banios']
-    input_df = None
+    input_df1 = None
+    input_df2 = None
 
     # Verifica si la ubicación fue seleccionada
     if location:
@@ -162,19 +177,41 @@ def generar_alternativas():
             pred_button = st.form_submit_button("Hacer Predicción")
 
         # Botón para hacer la predicción
+        # Botón para hacer la predicción
         if pred_button:
-            # Convertir el input del usuario en un DataFrame para el modelo
-            input_df = pd.DataFrame([input_usuario])
+            # Obtener los dos valores de mt2 seleccionados por el usuario
+            mt2_min, mt2_max = input_usuario['mt2']
 
-        if input_df is not None:
-            # Realizar la predicción
-            prediccion = modelo.predict(input_df)
+            # Crear dos entradas para el modelo, una para cada valor de mt2
+            input_usuario_min = input_usuario.copy()
+            input_usuario_min['mt2'] = mt2_min
 
-            # Mostrar el resultado de la predicción
-            st.subheader('Resultado de la Predicción:')
-            st.write(f'El valor estimado es: {prediccion[0]:.2f}')
-    else:
-        st.warning("Seleccione una ubicación para proceder con la predicción.")
+            input_usuario_max = input_usuario.copy()
+            input_usuario_max['mt2'] = mt2_max
+
+            # Convertir las entradas del usuario en DataFrames para el modelo
+            input_df1 = pd.DataFrame([input_usuario_min])
+            input_df2 = pd.DataFrame([input_usuario_max])
+
+        if input_df1 is not None and input_df2 is not None:
+            # Realizar las predicciones para ambos DataFrames
+            prediccion_min = modelo.predict(input_df1)
+            prediccion_max = modelo.predict(input_df2)
+
+            # Formatear los precios con separador de miles y símbolo de euros
+            precio_min = f"{int(prediccion_min[0]):,}".replace(",", ".") + " €"
+            precio_max = f"{int(prediccion_max[0]):,}".replace(",", ".") + " €"
+
+            # Mostrar el resultado de las predicciones con tamaño de fuente más grande
+            st.markdown(f'<h4>Resultado de la Predicción:</h3>',
+                        unsafe_allow_html=True)
+            st.markdown(f'<h2 style="font-size:26px;">El valor estimado para {mt2_min} m² es: {precio_min}</h2>',
+                        unsafe_allow_html=True)
+            st.markdown(f'<h2 style="font-size:26px;">El valor estimado para {mt2_max} m² es: {precio_max}</h2>',
+                        unsafe_allow_html=True)
+
+        else:
+            st.warning("Seleccione una ubicación para proceder con la predicción.")
 
 
 if __name__ == "__main__":

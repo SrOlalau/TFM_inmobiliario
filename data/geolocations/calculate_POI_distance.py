@@ -61,7 +61,7 @@ class POI_counter:
             self.closest_types = self.selected_types
         else:
             if not set(types).issubset(self.poi_types):
-                raise ValueError("Some of the provided types are not valid.")
+                raise ValueError(f"Some of the provided types are not valid. Available: {self.poi_types}, Selected:{types}")
             self.closest_types = types
 
     @staticmethod

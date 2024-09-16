@@ -70,9 +70,16 @@ def select_lat_lon():
 
         if location_method == "Seleccionar en el mapa":
             st.write("Seleccione un punto en el mapa:")
-            m = folium.Map(location=[40.5, -3.62], zoom_start=6)
+            # Crear el mapa centrado en la ubicación deseada con la capa base Stadia Stamen Toner Background
+            m = folium.Map(
+                location=[40.5, -3.62],
+                tiles='https://tiles.stadiamaps.com/tiles/stamen_toner/{z}/{x}/{y}{r}.png',
+                attr='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                zoom_start=6,
+                width='100%')
+
             m.add_child(folium.LatLngPopup())
-            map_data = st_folium(m, height=400, width=2000)
+            map_data = st_folium(m)
 
             if map_data.get("last_clicked"):
                 st.session_state.selected_point = map_data['last_clicked']

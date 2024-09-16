@@ -1,112 +1,50 @@
-# Proyecto TFM
+# TFM Inmobiliario - Desarrollo Local
 
-Este proyecto realiza web scraping de anuncios de propiedades inmobiliarias y guarda los datos en archivos CSV. Luego limpia los datos, entrena un modelo y finalmente despliega una app.
-El proyecto está dividido en varias etapas y se organiza en diferentes scripts de Python.
+Bienvenido al repositorio del **TFM Inmobiliario**. Esta rama `main` está diseñada para el desarrollo y prueba del proyecto en un entorno local antes de ser implementado en un servidor, como se detalla en la [rama server](https://github.com/SrOlalau/TFM_inmobiliario/tree/Servidor).
 
-## Estructura del Proyecto (por ahora)
+## Descripción del Proyecto
 
-```
-Proyecto/
-├── .venv/                    # Entorno virtual
-├── web_scraping_scripts/     # Scripts de scraping
-│   ├── __init__.py
-│   ├── web_scraping_pisos.py
-├── data/                     # Carpeta para almacenar datos descargados
-│   └── RawDataTFM/
-├── main.py                   # Script principal para ejecutar el scraping
-├── .gitignore                # Archivo para ignorar ciertos archivos y carpetas en Git
-└── README.md                 # Este archivo
-```
+Este proyecto tiene como objetivo desarrollar un sistema de análisis de datos inmobiliarios utilizando técnicas avanzadas de ciencia de datos, análisis exploratorio de datos (EDA), ingeniería de características y modelado predictivo. El flujo de trabajo del proyecto está estructurado para facilitar la implementación y desarrollo continuo, permitiendo a los desarrolladores realizar pruebas de manera eficiente en sus entornos locales antes de desplegar los cambios en el servidor.
+
+## Estructura del Proyecto
+
+A continuación se describe la estructura del proyecto y la funcionalidad de cada una de sus carpetas:
+
+- [app](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/app): Contiene la aplicación principal que sirve como interfaz de usuario para interactuar con los modelos de análisis de datos.
+  
+- [.streamlit](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/.streamlit): Archivos de configuración para la aplicación desarrollada con Streamlit, facilitando la personalización del frontend.
+
+- [data](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/data): Almacena los conjuntos de datos utilizados en el proyecto, tanto crudos como procesados.
+
+- [datamunging](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/datamunging): Scripts para limpieza y transformación de datos, preparando los conjuntos de datos para el análisis y modelado.
+
+- [datatuning](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/datatuning): Contiene scripts para ajustar los modelos de datos y optimizar su rendimiento.
+
+- [EDA](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/EDA): Scripts y notebooks para el Análisis Exploratorio de Datos (Exploratory Data Analysis - EDA), utilizados para descubrir patrones y relaciones en los datos.
+
+- [machinelearning](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/machinelearning): Implementaciones de modelos de aprendizaje automático utilizados en el análisis de datos inmobiliarios.
+
+- [web_scraping_scripts](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/web_scraping_scripts): Scripts utilizados para la extracción de datos de sitios web relevantes para el mercado inmobiliario.
+
+- [.gitignore](https://github.com/SrOlalau/TFM_inmobiliario/blob/main/.gitignore): Archivo que especifica los archivos y directorios que Git debe ignorar en el control de versiones.
+
+- [main.py](https://github.com/SrOlalau/TFM_inmobiliario/blob/main/main.py): Script principal para ejecutar la aplicación localmente.
+
+- [requirements.txt](https://github.com/SrOlalau/TFM_inmobiliario/blob/main/requirements.txt): Archivo que contiene todas las dependencias de Python necesarias para ejecutar el proyecto.
+
+## Flujo de Trabajo Principal
+
+1. **Obtención de Datos**: Utiliza los scripts en la carpeta [web_scraping_scripts](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/web_scraping_scripts) para extraer datos de fuentes inmobiliarias. Los datos se almacenan en la carpeta [data](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/data).
+
+2. **Limpieza y Transformación de Datos**: Los datos crudos se procesan utilizando scripts en la carpeta [datamunging](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/datamunging) para obtener un conjunto de datos limpio y listo para el análisis.
+
+3. **Análisis Exploratorio de Datos (EDA)**: Se lleva a cabo un EDA utilizando los scripts y notebooks en [EDA](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/EDA) para identificar patrones, anomalías y relaciones significativas.
+
+4. **Modelado Predictivo**: Se desarrollan y ajustan modelos de aprendizaje automático en la carpeta [machinelearning](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/machinelearning). Los modelos se entrenan, validan y optimizan utilizando scripts en [datatuning](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/datatuning).
+
+5. **Implementación de la Aplicación**: La aplicación es desarrollada y probada localmente a través del script [main.py](https://github.com/SrOlalau/TFM_inmobiliario/blob/main/main.py), utilizando la configuración de Streamlit proporcionada en [.streamlit](https://github.com/SrOlalau/TFM_inmobiliario/tree/main/.streamlit).
+
+6. **Despliegue al Servidor**: Una vez que las pruebas locales son satisfactorias, los cambios se integran en la [rama server](https://github.com/SrOlalau/TFM_inmobiliario/tree/server) para su despliegue en el servidor de producción.
 
 ## Requisitos
-
-1. Python 3.6 o superior
-2. pip (para instalar dependencias)
-3. Git (para clonación y manejo de versiones)
-
-## Configuración Inicial
-
-1. **Clonar el repositorio:**
-
-   ```sh
-   git clone https://github.com/SrOlalau/TFM_inmobiliario
-   cd Proyecto
-   ```
-
-2. **Crear y activar un entorno virtual:**
-
-   ```sh
-   python -m venv .venv
-   source .venv/bin/activate   # En Windows, usa: .venv\Scripts\activate
-   ```
-
-3. **Instalar las dependencias:**
-
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-## Ejecución del Proyecto
-
-1. Asegúrate de que el entorno virtual esté activado.
-2. Ejecuta el script principal:
-
-   ```sh
-   python main.py
-   ```
-
-## Estructura de Archivos y Directorios
-
-- **web_scraping_scripts/**: Contiene los scripts de scraping. `web_scraping_pisos.py` incluye las funciones necesarias para realizar el scraping y guardar los datos.
-- **data/**: Este directorio se utiliza para almacenar los datos descargados. No debe ser incluido en el control de versiones, por lo que está listado en `.gitignore`.
-- **main.py**: Script principal que ejecuta el proceso de scraping.
-- **.gitignore**: Archivo de configuración para excluir ciertos archivos y directorios del control de versiones.
-
-## Cuidados y Buenas Prácticas
-
-1. **Estructura del Proyecto**: Mantén la estructura del proyecto organizada. No muevas archivos o carpetas sin actualizar las rutas en los scripts correspondientes.
-2. **Archivos Ignorados**: La carpeta `data` está incluida en `.gitignore` para evitar que los archivos de datos grandes sean rastreados por Git. No elimines esta entrada de `.gitignore`.
-3. **Entorno Virtual**: Siempre utiliza un entorno virtual para instalar las dependencias del proyecto. Esto asegura que las dependencias estén aisladas y no interfieran con otros proyectos.
-4. **Confirmación de Cambios**: Siempre confirma tus cambios con mensajes descriptivos. Esto facilita la revisión de cambios y la colaboración en el proyecto.
-   ```sh
-   git add .
-   git commit -m "Descripción de los cambios realizados"
-   git push origin <nombre-de-tu-rama>
-   ```
-5. **Colaboración**: Utiliza ramas para desarrollar nuevas características o hacer cambios. Esto facilita la revisión de código y evita conflictos en la rama principal (`main` o `master`).
-6. **Creación de subcarpetas con scripts**: Utiliza nombres del tipo `snake_case` para nombrar carpetas y scripts. Para dejar disponibles los scripts de una carpeta en el entrno general, genera un archivo vacío de nombre `__init__.py`.
-
-## Contribución
-
-Para contribuir al proyecto, sigue estos pasos:
-
-1. **Crear una rama nueva para tu característica o arreglo:**
-
-   ```sh
-   git checkout -b nombre-de-tu-rama
-   ```
-
-2. **Realizar tus cambios y confirmar:**
-
-   ```sh
-   git add .
-   git commit -m "Descripción de los cambios"
-   ```
-
-3. **Empujar tu rama al repositorio remoto:**
-
-   ```sh
-   git push origin nombre-de-tu-rama
-   ```
-
-4. **Crear un Pull Request** en GitHub y espera la revisión de tu código.
-
-## Recursos Adicionales
-
-- [Documentación de GitHub](https://docs.github.com/)
-- [Documentación de Python](https://docs.python.org/3/)
-
-Si tienes alguna pregunta o necesitas ayuda, no dudes en contactarme.
-
----
-¡GANEMOS!
+Python 3.12 o mayor
