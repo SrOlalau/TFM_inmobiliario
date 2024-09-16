@@ -9,7 +9,7 @@ from app.utils.app_poi_calculator import POICalculator
 
 
 # Definir las rutas de los modelos
-MODEL_DIR = './app/models'
+MODEL_DIR = './machinelearning/models'
 MODEL_ALQUILER_PATH = os.path.join(MODEL_DIR, 'random_forest_pipeline_alquiler_venta_Alquiler.pickle')
 MODEL_VENTA_PATH = os.path.join(MODEL_DIR, 'random_forest_pipeline_alquiler_venta_Venta.pickle')
 
