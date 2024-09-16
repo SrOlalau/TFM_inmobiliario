@@ -140,7 +140,7 @@ def optimize_hyperparameters(X, y):
     """Optimiza los hiperparámetros usando Optuna."""
     print("Optimizando hiperparámetros...")
     study = optuna.create_study(direction='minimize')
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=10, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=5, show_progress_bar=True)
     
     print("Mejores hiperparámetros encontrados:")
     print(study.best_params)
