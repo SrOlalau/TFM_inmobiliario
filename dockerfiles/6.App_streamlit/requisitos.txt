@@ -61,7 +61,7 @@ nbformat==5.10.4
 nest-asyncio==1.6.0
 networkx==3.3
 numba==0.60.0
-numpy==1.26.4
+numpy==2.0.0
 orjson==3.10.7
 packaging==24.1
 pandas==2.2.2
@@ -78,6 +78,7 @@ plotly-resampler==0.10.0
 prompt_toolkit==3.0.47
 protobuf==5.27.3
 psutil==6.0.0
+psycopg2==2.9.9
 ptyprocess==0.7.0
 pure_eval==0.2.3
 pyarrow==17.0.0
@@ -111,6 +112,7 @@ stack-data==0.6.3
 statsmodels==0.14.2
 streamlit==1.38.0
 streamlit_folium==0.22.1
+SQLAlchemy==2.0.29
 tenacity==8.5.0
 threadpoolctl==3.5.0
 toml==0.10.2
@@ -130,3 +132,5 @@ wordcloud==1.9.3
 xyzservices==2024.9.0
 ydata-profiling==4.7.0
 zipp==3.20.0
+optuna==3.6.1
+optuna-integration==4.0.0
