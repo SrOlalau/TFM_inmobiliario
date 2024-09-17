@@ -1,0 +1,21 @@
+# Ignorar archivos de entorno virtual
+.venv/
+
+# Ignorar archivos compilados de Python
+*.pyc
+__pycache__/
+
+# Ignorar archivos de configuración de IDE
+.idea/
+.vscode/
+
+# Ignorar archivos de sistema
+.DS_Store
+
+# Ignora base de datos consolidados, para mantener solamente los datos una vez
+/datamunging/consolidated_data.csv
+
+#Ignora archivos pickle.pkl
+.pkl
+#Ignora archivos pickle.pkl
+.pickle
