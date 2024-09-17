@@ -140,7 +140,7 @@ def optimize_hyperparameters(X, y):
     """Optimiza los hiperparámetros usando Optuna."""
     print("Optimizando hiperparámetros...")
     study = optuna.create_study(direction='minimize')
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=1, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=3, show_progress_bar=True)
     
     print("Mejores hiperparámetros encontrados:")
     print(study.best_params)
@@ -219,7 +219,7 @@ def export_model(model, features, category, base_dir='/resultado'):
     
     raise Exception("No se pudo guardar el modelo en ninguna ubicación.")
 
-def main(target='precio', category='venta'):
+def main(target='precio', category='alquiler'):
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
 
@@ -286,4 +286,4 @@ def main(target='precio', category='venta'):
     print(f"\nTiempo total de ejecución: {int(hours)}h {int(minutes)}m {int(seconds)}s")
 
 if __name__ == '__main__':
-    main(category='venta')  # Cambia 'venta' por 'alquiler' según lo que necesites entrenar
+    main(category='alquiler')  # Cambia 'venta' por 'alquiler' según lo que necesites entrenar
