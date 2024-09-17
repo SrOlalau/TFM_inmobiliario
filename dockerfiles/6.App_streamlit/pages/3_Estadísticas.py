@@ -28,7 +28,8 @@ def classify_graphs(graph_files):
         elif graph.startswith('correlation_'):
             graph_types['Correlación'].append(graph)
         elif graph.startswith('boxplot_'):
-            graph_types['Boxplot'].append(graph)
+            continue
+            # graph_types['Boxplot'].append(graph)
         elif graph.startswith('missing_'):
             graph_types['Missing'].append(graph)
         elif graph.startswith('scatter_'):

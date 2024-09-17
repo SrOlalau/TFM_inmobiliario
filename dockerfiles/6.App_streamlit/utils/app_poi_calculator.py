@@ -5,9 +5,13 @@ import os
 
 
 class POICalculator:
-    def __init__(self, poi_path):
-        # Cargar y filtrar POIs
-        self.poi_df = pd.read_csv(poi_path)
+    def __init__(self, poi_data):
+        # Si se pasa un DataFrame directamente, lo usamos. Si no, asumimos que es una ruta de archivo CSV.
+        if isinstance(poi_data, pd.DataFrame):
+            self.poi_df = poi_data
+        else:
+            self.poi_df = pd.read_csv(poi_data)
+        
         self.filtered_poi_df = self._filter_poi_types()
         self.poi_types = self.filtered_poi_df['type'].dropna().unique()
 
@@ -62,7 +66,7 @@ class POICalculator:
         center = (lat, lon)
 
         # Separar variables en contadores y distancias más cercanas
-        poi_counts = [var for var in variables if 'POI_' in var]
+        poi_counts = [var for var in variables if 'poi_' in var]
         closest_pois = [var for var in variables if 'closest_' in var]
 
         # Calcular POI counts dentro del radio
