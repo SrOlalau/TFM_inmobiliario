@@ -140,7 +140,7 @@ def optimize_hyperparameters(X, y):
     """Optimiza los hiperparámetros usando Optuna."""
     print("Optimizando hiperparámetros...")
     study = optuna.create_study(direction='minimize')
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=3, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=1, show_progress_bar=True)
     
     print("Mejores hiperparámetros encontrados:")
     print(study.best_params)
@@ -176,12 +176,13 @@ def train_and_evaluate_model(X_train, X_test, y_train, y_test, best_params):
     
     return model, feature_importances
 
-def export_model(model, category, base_dir='/resultado'):
+def export_model(model, features, category, base_dir='/resultado'):
     """
-    Exporta el modelo entrenado a un archivo pickle.
+    Exporta el modelo entrenado y las características a un archivo pickle.
     
     Args:
     model: El modelo entrenado para exportar.
+    features: Lista de características utilizadas para entrenar el modelo.
     category: La categoría del modelo (venta o alquiler).
     base_dir: El directorio base donde se guardará el modelo.
     
@@ -195,6 +196,12 @@ def export_model(model, category, base_dir='/resultado'):
         os.path.expanduser('~/resultado')
     ]
     
+    # Crear un diccionario que contenga tanto el modelo como las características
+    model_data = {
+        'pipeline': model,
+        'features': features  # Guardar las características utilizadas
+    }
+    
     for directory in directories:
         try:
             os.makedirs(directory, exist_ok=True)
@@ -203,7 +210,7 @@ def export_model(model, category, base_dir='/resultado'):
             
             print(f"Guardando modelo en {full_path}...")
             with open(full_path, 'wb') as f:
-                pickle.dump(model, f)
+                pickle.dump(model_data, f)  # Guardar el diccionario en lugar del modelo solo
             
             print(f"Modelo guardado exitosamente en: {full_path}")
             return full_path
@@ -212,7 +219,7 @@ def export_model(model, category, base_dir='/resultado'):
     
     raise Exception("No se pudo guardar el modelo en ninguna ubicación.")
 
-def main(target='precio', category='venta'):
+def main(target='precio', category='alquiler'):
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
 
@@ -248,25 +255,22 @@ def main(target='precio', category='venta'):
     for param, value in best_params.items():
         print(f"{param}: {value}")
 
+    # Guardar el modelo junto con las características
     try:
-        saved_path = export_model(final_model, category)
+        saved_path = export_model(final_model, top_50_features, category)
         print(f"Modelo guardado en: {saved_path}")
     except Exception as e:
         print(f"Error al guardar el modelo: {str(e)}")
-        print("El modelo no se pudo guardar, pero el entrenamiento se completó.")
 
     # Construir mensaje de resumen para Telegram
-    num_features_used = len(top_50_features)
-    training_set_size = X_train_top.shape
-    test_set_size = X_test_top.shape
-
-    summary_message = "Machine learning finalizado\n\nResumen del modelo:\n"
-    summary_message += f"Número de características utilizadas: {num_features_used}\n"
-    summary_message += f"Tamaño del conjunto de entrenamiento: {training_set_size}\n"
-    summary_message += f"Tamaño del conjunto de prueba: {test_set_size}\n"
-    summary_message += "\nMejores hiperparámetros:\n"
-    for param, value in best_params.items():
-        summary_message += f"{param}: {value}\n"
+    summary_message = (
+        f"Machine learning finalizado para {category}\n\n"
+        f"Número de características utilizadas: {len(top_50_features)}\n"
+        f"Tamaño del conjunto de entrenamiento: {X_train_top.shape}\n"
+        f"Tamaño del conjunto de prueba: {X_test_top.shape}\n"
+        "\nMejores hiperparámetros:\n"
+        + "\n".join([f"{param}: {value}" for param, value in best_params.items()])
+    )
 
     # Enviar mensaje de finalización a Telegram
     send_telegram_message(summary_message)
@@ -282,5 +286,4 @@ def main(target='precio', category='venta'):
     print(f"\nTiempo total de ejecución: {int(hours)}h {int(minutes)}m {int(seconds)}s")
 
 if __name__ == '__main__':
-    # Cambia 'venta' por 'alquiler' si quieres entrenar el modelo para alquiler
-    main(category='venta')
+    main(category='alquiler')  # Cambia 'venta' por 'alquiler' según lo que necesites entrenar
