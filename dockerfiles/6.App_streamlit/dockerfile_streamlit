@@ -15,5 +15,5 @@ EXPOSE 8501
 HEALTHCHECK CMD curl --fail http://localhost:8501/_stcore/health
 
 # Define el comando por defecto para listar archivos y ejecutar el script de entrada
-CMD ["streamlit", "run", "app/0_Inicio.py", "--server.port=8501", "--server.address=0.0.0.0"]
+ENTRYPOINT ["/bin/bash"]
 
