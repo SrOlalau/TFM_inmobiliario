@@ -1,21 +1,18 @@
-# Usa una imagen base con Python
-FROM python:3.9-slim
+# Usa la imagen base de Python 3.11
+FROM python:3.12.6
 
-# Establece el directorio de trabajo
+# Establece el directorio de trabajo en el contenedor
 WORKDIR /app
 
-# Copia los archivos necesarios (asegúrate de tener tu archivo 'requisitos.txt')
-COPY requisitos.txt ./
-COPY app/ ./app
+# Copia el archivo de requisitos al contenedor
+COPY ./dockerfiles/6.App_streamlit/requisitos.txt /app/requisitos.txt
 
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requisitos.txt
 
-# Instala streamlit si no está en requisitos.txt
 RUN pip install --no-cache-dir streamlit
 
-# Exponer el puerto necesario para la app de streamlit
 EXPOSE 8501
 
-# Comando para ejecutar streamlit
+# Define el comando por defecto para listar archivos y ejecutar el script de entrada
 CMD ["python", "-m", "streamlit.cli", "run", "app/0_Inicio.py", "--server.port=8501", "--server.address=0.0.0.0"]
