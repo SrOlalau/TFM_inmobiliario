@@ -20,6 +20,40 @@ import requests  # Nuevo: Para envío de mensajes a Telegram
 
 warnings.filterwarnings('ignore')
 
+def validate_var_names(df, model_columns):
+    """
+    Validate and match the columns from the original DataFrame (df) with the columns used in the model.
+
+    Parameters:
+    df (DataFrame): Original DataFrame before preprocessing.
+    model_columns (Index or list): Columns used in the model after preprocessing.
+
+    Returns:
+    list: List of column names from the original DataFrame that correspond to the model columns.
+    """
+    # Initialize lists for matching columns
+    matched_columns = []
+
+    # Iterate through all model columns
+    for col in model_columns:
+        # Remove prefixes "cat__" or "num__"
+        stripped_col = col.split('__', 1)[-1]
+
+        # Check for numerical columns directly
+        if col.startswith('num__') and stripped_col in df.columns:
+            matched_columns.append(stripped_col)
+
+        # Check for categorical columns using "startswith"
+        elif col.startswith('cat__'):
+            # Find any column in df that starts with the stripped column name
+            for df_col in df.columns:
+                if stripped_col.startswith(df_col):
+                    matched_columns.append(df_col)
+
+    # Remove duplicates if any
+    matched_columns = list(set(matched_columns))
+    return matched_columns
+
 mejor_cv = {
     'venta': {
         'bootstrap': False,
@@ -288,14 +322,14 @@ def main(target='precio', dummies=['alquiler_venta']):
 
         # Entrenar el primer modelo y obtener las 50 características más importantes
         top_50_features = train_first_model(df_dummy, target, dummy_info=(dummy_info, val))
-
+        matched_columns=validate_var_names(df_dummy, top_50_features)
         # Optimizar los hiperparámetros usando Optuna
-        X_train_top = df_dummy[top_50_features]
+        X_train_top = df_dummy[matched_columns]
         y_train_top = df_dummy[target]
         best_params = optimize_hyperparameters(X_train_top, y_train_top)  # Modificado: Optimización de hiperparámetros
 
         # Entrenar el modelo final usando los hiperparámetros optimizados
-        train_final_model(df_dummy, target, top_50_features, best_params, dummy_info=(dummy_info, val))  # Modificado: Pasar los hiperparámetros optimizados
+        train_final_model(df_dummy, target, matched_columns, best_params, dummy_info=(dummy_info, val))  # Modificado: Pasar los hiperparámetros optimizados
 
     end_time = time.time()
     elapsed_time = end_time - start_time
