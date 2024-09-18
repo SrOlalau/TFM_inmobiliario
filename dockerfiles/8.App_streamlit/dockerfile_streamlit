@@ -5,7 +5,7 @@ FROM python:3.12.6
 WORKDIR /app
 
 # Copia el archivo de requisitos al contenedor
-COPY ./dockerfiles/6.App_streamlit/requisitos.txt /app/requisitos.txt
+COPY ./dockerfiles/8.App_streamlit/requisitos.txt /app/requisitos.txt
 
 # Instala las dependencias
 RUN pip install --no-cache-dir -r requisitos.txt
