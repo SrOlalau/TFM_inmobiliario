@@ -19,8 +19,84 @@ import gc  # Nuevo: Manejo de memoria
 import requests  # Nuevo: Para envío de mensajes a Telegram
 
 warnings.filterwarnings('ignore')
+#Original
+def print_rf_stats(df, X_train, X_test, mae, rmse, r2, y_test, y_pred, pipeline):
+    # Imprimir resultados
+    print("-----------DataFrame-----------:")
+    print(f"Tamaño del DataFrame: {df.shape}")
+    print(f"Tamaño de X_train: {X_train.shape}")
+    print(f"Tamaño de X_test: {X_test.shape}")
+    print("-----------Resultados de RandomForest:-----------")
+    print(f"MAE: {mae}")
+    print(f"RMSE: {rmse}")
+    print(f"R2 Score: {r2}")
+
+    print("\nAlgunas predicciones de RandomForest:")
+    # Generar 5 índices aleatorios únicos de y_test
+    random_indices = np.random.choice(range(len(y_test)), size=6, replace=False)
+
+    # Mostrar las predicciones correspondientes a los índices aleatorios
+    for idx in random_indices:
+        real = y_test.iloc[idx]  # Acceso directo para pandas Series
+        pred = y_pred[idx]  # Acceso directo para numpy array
+        print(f"Precio real: {real}, Precio predicho: {pred}")
+
+    print("\nCaracterísticas más importantes de RandomForest:")
+    model_cols = []
+    for col in pipeline.named_steps['preprocessor'].get_feature_names_out():
+        # Remove prefixes "cat__" or "num__"
+        stripped_col = col.split('__', 1)[-1]
+        model_cols.append(stripped_col)
+    feature_importances = pd.Series(pipeline.named_steps['regressor'].feature_importances_,
+                                    index= model_cols)
+    top_features_df = feature_importances.nlargest(50).reset_index()
+    top_features_df.columns = ['feature', 'importance']
+    print(top_features_df.head(10))
+    print("------------------------------------------------")
 
 
+#Original
+def range_describe(df, matched_columns):
+    """
+    Crea un diccionario con el rango de valores, así como la media o moda para cada columna del DataFrame.
+
+    Parameters:
+    df (DataFrame): El DataFrame original.
+    matched_columns (list): Lista de columnas del DataFrame que se están utilizando en el modelo.
+
+    Returns:
+    dict: Diccionario con el nombre de cada columna, su rango de valores/opciones posibles, y la media o moda.
+    """
+    column_ranges = {}
+
+    for col in matched_columns:
+        if df[col].dtype == 'object':  # Columnas categóricas
+            # Obtener valores únicos y convertirlos a lista para el diccionario
+            unique_values = df[col].unique().tolist()
+            # Calcular la moda
+            mode_val = df[col].mode()[0] if not df[col].mode().empty else unique_values[0]
+            column_ranges[col] = {'range': unique_values, 'default': mode_val}
+
+        elif pd.api.types.is_numeric_dtype(df[col]):  # Columnas numéricas
+            # Calcular mínimo, máximo y media
+            min_val = df[col].min()
+            max_val = df[col].max()
+            mean_val = df[col].mean()
+            perc_1 = df[col].quantile(0.01)
+            perc_95 = df[col].quantile(0.95)
+
+            column_ranges[col] = {
+                'range': [min_val, max_val],
+                'default': mean_val,
+                'range_80pct': [perc_1, perc_95]  # Rango del 10 al 90 percentil
+            }
+
+        else:
+            # Si la columna no es categórica ni numérica, la omitimos
+            continue
+
+    return column_ranges
+#Original
 def validate_var_names(df, model_columns):
     """
     Validate and match the columns from the original DataFrame (df) with the columns used in the model.
@@ -162,7 +238,7 @@ def create_pipeline(preprocessor, dummy_info):
     tipo_modelo = dummy_info[1]
     params_modelo = mejor_cv[tipo_modelo]
 
-    model = RandomForestRegressor(**params_modelo)
+    model = RandomForestRegressor(**params_modelo,n_jobs=-1)
 
     pipeline = Pipeline(steps=[
         ('preprocessor', preprocessor),
@@ -342,7 +418,6 @@ def train_final_model(df, target, top_features, best_params, dummy_info=None):
 
     # Mostrar las métricas calculadas
     print_rf_stats(df_filtered, X_train, X_test, mae, rmse, r2, y_test, y_pred, pipeline)
-
 
 # Función principal modificada para incluir la optimización de hiperparámetros con Optuna (Modificado)
 def main(target='precio', dummies=['alquiler_venta']):
