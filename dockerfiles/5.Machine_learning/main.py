@@ -231,7 +231,7 @@ def export_model(model, features, category, label_encoders, base_dir='/resultado
     
     raise Exception("No se pudo guardar el modelo en ninguna ubicación.")
 
-def main(target='precio', category='alquiler'):
+def main(target='precio', category='venta'):
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
 
@@ -298,4 +298,4 @@ def main(target='precio', category='alquiler'):
     print(f"\nTiempo total de ejecución: {int(hours)}h {int(minutes)}m {int(seconds)}s")
 
 if __name__ == '__main__':
-    main(category='alquiler')  # Cambia 'venta' por 'alquiler' según lo que necesites entrenar
+    main(category='venta')  # Cambia 'venta' por 'alquiler' según lo que necesites entrenar
