@@ -7,6 +7,7 @@ import psycopg2
 import requests
 from sqlalchemy import create_engine, text  # Nuevo: Para cargar datos desde PostgreSQL
 
+
 # Configuración de la base de datos (Nuevo)
 DB_DEST = {
     "NAME": "datatuning",

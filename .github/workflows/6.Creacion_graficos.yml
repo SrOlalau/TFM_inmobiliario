@@ -6,7 +6,7 @@ env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
   DOCKER_REPOSITORY: srolalau/graficos
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/6.Creacion_graficos/dockerfile_streamlit
+  DOCKERFILE_PATH: dockerfiles/6.Creacion_graficos/dockerfile_creacion_graficos
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
