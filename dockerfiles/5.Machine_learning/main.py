@@ -65,11 +65,21 @@ def process_features(df, target):
     """Preprocesa las características del DataFrame."""
     label_encoders = {}
     columns_to_drop = []
+    # Identificar columnas categóricas y datetime
     categorical_columns = df.select_dtypes(include=['object']).columns
-    numerical_columns = df.select_dtypes(include=[np.number]).columns.drop(target)
-    datetime_columns = df.select_dtypes(include=['datetime64']).columns
+    datetime_columns = df.select_dtypes(include=['datetime64', 'datetime64[ns]']).columns
 
     print("Procesando características...")
+
+    # Eliminar columnas datetime
+    if len(datetime_columns) > 0:
+        print("Eliminando columnas datetime:", datetime_columns.tolist())
+        df = df.drop(columns=datetime_columns)
+
+    # Actualizar las columnas numéricas después de eliminar las datetime
+    numerical_columns = df.select_dtypes(include=[np.number]).columns.drop(target)
+
+    # Procesar variables categóricas
     for col in tqdm(categorical_columns, desc="Codificando variables categóricas"):
         df[col] = df[col].astype(str)
         unique_vals = df[col].nunique()
@@ -80,16 +90,22 @@ def process_features(df, target):
             le = LabelEncoder()
             df[col] = le.fit_transform(df[col])
             label_encoders[col] = le
-            df[col] = df[col].astype(np.int8)  # Reducir tamaño de tipo de dato
+            df[col] = df[col].astype(np.int8)
 
-    scaler = StandardScaler()
-    df[numerical_columns] = scaler.fit_transform(df[numerical_columns])
-    df[numerical_columns] = df[numerical_columns].astype(np.float32)  # Reducir tamaño de tipo de dato
+    # Escalar variables numéricas
+    if len(numerical_columns) > 0:
+        scaler = StandardScaler()
+        df[numerical_columns] = scaler.fit_transform(df[numerical_columns])
+        df[numerical_columns] = df[numerical_columns].astype(np.float32)
+    else:
+        scaler = None  # No hay variables numéricas para escalar
 
+    # Eliminar columnas con un único valor
     for col in df.columns:
         if df[col].nunique() == 1:
             columns_to_drop.append(col)
 
+    # Eliminar columnas no deseadas
     df = df.drop(columns=columns_to_drop)
     return df, scaler, label_encoders
 
