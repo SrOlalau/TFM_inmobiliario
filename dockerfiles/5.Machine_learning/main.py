@@ -369,7 +369,7 @@ def main(target='precio', dummies=['alquiler_venta']):
         top_50_features = train_first_model(df_dummy, target, dummy_info=(dummy_info, val))
         matched_columns=validate_var_names(df_dummy, top_50_features)
         # Crear el preprocesador para este conjunto de datos
-        preprocessor = create_preprocessing_pipeline(df_dummy[matched_columns], target)
+        preprocessor = create_preprocessing_pipeline(df_dummy[[*matched_columns,target]], target)
         # Optimizar los hiperparámetros usando Optuna
         X_train_top = df_dummy[matched_columns]
         y_train_top = df_dummy[target]
