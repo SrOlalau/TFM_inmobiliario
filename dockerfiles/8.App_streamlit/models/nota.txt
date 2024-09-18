@@ -1,0 +1,1 @@
+Aqui irian los pickle que se exporta de machine learning, pero por limitaciones de peso no se pueden subir a github.

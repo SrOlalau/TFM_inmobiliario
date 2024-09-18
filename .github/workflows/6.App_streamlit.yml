@@ -1,12 +1,12 @@
 # Nombre del flujo de trabajo. Puedes cambiarlo si lo deseas.
-name: 6.App_streamlit
+name: 8.App_streamlit
 
 # Variables de entorno globales. Modifica estos valores según tu configuración.
 env:
   # El repositorio de Docker donde se publicará la imagen. Formato: usuario/nombre-repositorio
   DOCKER_REPOSITORY: srolalau/aplicacion
   # La ruta al Dockerfile dentro de tu repositorio. Modifica esto si mueves tu Dockerfile.
-  DOCKERFILE_PATH: dockerfiles/6.App_streamlit/dockerfile_streamlit
+  DOCKERFILE_PATH: dockerfiles/8.App_streamlit/dockerfile_streamlit
 
 # Define cuándo se ejecutará este flujo de trabajo
 on:
@@ -16,7 +16,7 @@ on:
     # Solo se activará si hay cambios en la carpeta 'dockerfiles/test' o sus subcarpetas.
     # Modifica esta ruta si mueves tu Dockerfile a una ubicación diferente.
     paths:
-      - 'dockerfiles/6.App_streamlit/**'
+      - 'dockerfiles/8.App_streamlit/**'
 
 # Define los trabajos que se ejecutarán
 jobs:
