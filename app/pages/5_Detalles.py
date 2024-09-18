@@ -19,6 +19,6 @@ def render_offers():
 if __name__ == "__main__":
     st.set_page_config(page_title="Ofertas", page_icon="🔍", layout="wide")
     set_assets()
-    render_offers()
+#    render_offers()
     licencias_text()
     render_footer()
