@@ -275,7 +275,7 @@ def main(target='precio', dummies=['alquiler_venta']):
     send_telegram_message(f"Iniciando machine learning de {dummies[0]}")
 
     # Cargar los datos desde la base de datos
-    df = load_data_from_postgres(dummies[0])
+    df = load_data_from_postgres()
 
     # Dividir el DataFrame por categoría
     dummy_dfs = divide_dataset_bycategory(df, dummies)
