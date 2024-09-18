@@ -86,12 +86,6 @@ def process_features(df, target):
     df[numerical_columns] = scaler.fit_transform(df[numerical_columns])
     df[numerical_columns] = df[numerical_columns].astype(np.float32)  # Reducir tamaño de tipo de dato
 
-    for col in tqdm(datetime_columns, desc="Procesando columnas de fecha"):
-        df[f'{col}_year'] = df[col].dt.year.astype(np.int16)
-        df[f'{col}_month'] = df[col].dt.month.astype(np.int8)
-        df[f'{col}_day'] = df[col].dt.day.astype(np.int8)
-        columns_to_drop.append(col)
-
     for col in df.columns:
         if df[col].nunique() == 1:
             columns_to_drop.append(col)
