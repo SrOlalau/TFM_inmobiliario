@@ -8,6 +8,7 @@ import requests
 from sqlalchemy import create_engine
 import plotly.figure_factory as ff
 from utils.assets_loader import set_assets, render_header, render_footer
+import sys
 
 # Configuración de Telegram
 TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
