@@ -300,7 +300,7 @@ def price_distribution_by_region(data, folder):
 
 def main():
     # Notificación de inicio
-    send_telegram_message('El proceso ha comenzado.')
+    send_telegram_message('El proceso de generacion de graficos ha comenzado.')
 
     # Cargar datos desde la base de datos PostgreSQL
     data = load_data_from_db()
@@ -308,7 +308,7 @@ def main():
     data['Precio por mt2'] = data['precio']/data['mt2']
 
     # Filtrar columnas relevantes para estadísticas descriptivas
-    original_columns = [col for col in data.columns if "POI_" not in col and "closest_" not in col]
+    original_columns = [col for col in data.columns if "poi_" not in col and "closest_" not in col]
 
     # Guardar estadísticas descriptivas
     save_descriptive_stats(data, original_columns)
@@ -352,7 +352,7 @@ def main():
             category_data = handle_outliers(category_data, 'mt2', folder)
 
     # Notificación de finalización
-    send_telegram_message('El proceso ha finalizado.')
+    send_telegram_message('El proceso de generacion de graficos ha finalizado.')
 
 if __name__ == '__main__':
     main()
