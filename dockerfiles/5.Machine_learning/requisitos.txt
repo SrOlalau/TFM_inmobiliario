@@ -17,6 +17,6 @@ pgeocode==0.5.0
 fuzzywuzzy==0.18.0
 joblib==1.4.0
 SQLAlchemy==2.0.29
-scikit-learn==1.4.2
+scikit-learn==1.5.1
 optuna==3.6.1
 optuna-integration==4.0.0
