@@ -34,6 +34,6 @@ def render_header():
 def render_footer():
     st.markdown("""
         <div class="footer">
-            <p>&copy; 2024 Precio Piso. Todos los derechos reservados.</p>
+            <p>&copy; 2024 Precio Piso.</p>
         </div>
     """, unsafe_allow_html=True)
