@@ -19,15 +19,6 @@ import gc  # Nuevo: Manejo de memoria
 import requests  # Nuevo: Para envío de mensajes a Telegram
 
 warnings.filterwarnings('ignore')
-# Extra porque daba error
-def clean_numeric_columns(df):
-    """Convierte las columnas numéricas y reemplaza los valores no numéricos con NaN."""
-    for col in df.select_dtypes(include=['object']).columns:
-        try:
-            df[col] = pd.to_numeric(df[col], errors='coerce')
-        except ValueError:
-            print(f"No se pudo convertir la columna {col} a numérico.")
-    return df
 
 
 def validate_var_names(df, model_columns):
@@ -210,31 +201,74 @@ def get_model_metrics(y_test, y_pred):
     return mae, rmse, r2
 
 
-# Optimizador de hiperparámetros usando Optuna (Nuevo)
-def objective(trial, X, y):
+# Optimizador de hiperparámetros usando Optuna (Modificado)
+def objective(trial, X, y, preprocessor):
+    """
+    Función objetivo para Optuna, que incluye el preprocesador para transformar los datos.
+    
+    Parámetros:
+    - trial: Parámetros del trial de Optuna.
+    - X: Variables independientes.
+    - y: Variable dependiente.
+    - preprocessor: El preprocesador (pipeline) que se aplicará a los datos.
+    
+    Devuelve:
+    - score: El error medio cuadrático negativo promedio del modelo.
+    """
+    # Parámetros sugeridos por Optuna para RandomForest
     params = {
         'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
         'max_depth': trial.suggest_int('max_depth', 10, 100),
         'min_samples_split': trial.suggest_int('min_samples_split', 2, 10),
         'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 10),
         'max_features': trial.suggest_categorical('max_features', ['sqrt', 'log2', None]),
-        'bootstrap': trial.suggest_categorical('bootstrap', [True, False])
+        'bootstrap': trial.suggest_categorical('bootstrap', [True, False]),
+        'n_jobs': -1  # Usar todos los núcleos disponibles
     }
-    
-    model = RandomForestRegressor(**params, random_state=42, n_jobs=-1)
-    score = -np.mean(cross_val_score(model, X, y, cv=5, scoring='neg_mean_squared_error', n_jobs=-1))
+
+    # Crear el modelo de RandomForest con los hiperparámetros optimizados
+    model = RandomForestRegressor(**params, random_state=42)
+
+    # Crear el pipeline con el preprocesador y el modelo
+    pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),  # Agregamos el preprocesador al pipeline
+        ('regressor', model)
+    ])
+
+    # Evaluar el modelo con validación cruzada
+    score = -np.mean(cross_val_score(pipeline, X, y, cv=5, scoring='neg_mean_squared_error', n_jobs=-1))
+
+    # Limpiar el modelo para liberar memoria
     del model
     gc.collect()
+
     return score
 
-# Optimización de hiperparámetros con Optuna (Nuevo)
-def optimize_hyperparameters(X, y):
-    print("Optimizando hiperparámetros...")
-    study = optuna.create_study(direction='minimize')
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=1, show_progress_bar=True)
+
+# Optimización de hiperparámetros con Optuna (Modificado)
+def optimize_hyperparameters(X, y, preprocessor):
+    """
+    Optimiza los hiperparámetros usando Optuna, pasando el preprocesador.
     
+    Parámetros:
+    - X: Variables independientes.
+    - y: Variable dependiente.
+    - preprocessor: Preprocesador (pipeline) a aplicar a los datos.
+    
+    Devuelve:
+    - Los mejores hiperparámetros encontrados.
+    """
+    print("Optimizando hiperparámetros...")
+    
+    # Crear un estudio de Optuna
+    study = optuna.create_study(direction='minimize')
+
+    # Optimizar los hiperparámetros con el preprocesador
+    study.optimize(lambda trial: objective(trial, X, y, preprocessor), n_trials=1, show_progress_bar=True)
+
     print("Mejores hiperparámetros encontrados:")
     print(study.best_params)
+    
     return study.best_params
 
 
@@ -321,12 +355,6 @@ def main(target='precio', dummies=['alquiler_venta']):
     # Cargar los datos desde la base de datos y limpiar las columnas numéricas
     df = load_data_from_postgres()
     
-    # Limpiar las columnas numéricas, reemplazando los valores no numéricos con NaN
-    #Extra por el error
-    df = clean_numeric_columns(df)
-    
-    print(f"Tamaño del DataFrame después de limpiar las columnas numéricas: {df.shape}")
-
 
     # Dividir el DataFrame por categoría
     dummy_dfs = divide_dataset_bycategory(df, dummies)
@@ -340,10 +368,12 @@ def main(target='precio', dummies=['alquiler_venta']):
         # Entrenar el primer modelo y obtener las 50 características más importantes
         top_50_features = train_first_model(df_dummy, target, dummy_info=(dummy_info, val))
         matched_columns=validate_var_names(df_dummy, top_50_features)
+        # Crear el preprocesador para este conjunto de datos
+        preprocessor = create_preprocessing_pipeline(df_dummy[matched_columns], target)
         # Optimizar los hiperparámetros usando Optuna
         X_train_top = df_dummy[matched_columns]
         y_train_top = df_dummy[target]
-        best_params = optimize_hyperparameters(X_train_top, y_train_top)  # Modificado: Optimización de hiperparámetros
+        best_params = optimize_hyperparameters(X_train_top, y_train_top, preprocessor)  # Modificado: Pasa el preprocesador
 
         # Entrenar el modelo final usando los hiperparámetros optimizados
         train_final_model(df_dummy, target, matched_columns, best_params, dummy_info=(dummy_info, val))  # Modificado: Pasar los hiperparámetros optimizados
