@@ -330,7 +330,7 @@ def main():
 
         # Filtrar columnas numéricas que no contienen "POI_" o "closest_"
         numeric_columns = category_data.select_dtypes(include=np.number).columns
-        numeric_columns = [col for col in numeric_columns if "POI_" not in col and "closest_" not in col]
+        numeric_columns = [col for col in numeric_columns if "poi_" not in col and "closest_" not in col]
 
         # Análisis univariado por categoría
         for column in numeric_columns:
