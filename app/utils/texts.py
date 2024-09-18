@@ -2,14 +2,10 @@ import streamlit as st
 
 def licencias_text():
     st.markdown("""
-        ## Licencias y Condiciones de Uso en las Plataformas Inmobiliarias
-        ### Licencias en Trovit
-        Trovit es una plataforma que actúa como agregador de anuncios inmobiliarios (y también de otros sectores como automóviles y empleo), recopila información de diferentes sitios web y la presenta de manera centralizada, facilitando la búsqueda de anuncios para los usuarios. Sin embargo, Trovit también establece límites estrictos sobre el uso de los datos que ofrece.
-        Los Términos y Condiciones de Trovit estipulan que el contenido no puede ser utilizado con fines comerciales sin la autorización explícita de la plataforma. En este sentido, cualquier intento de reventa, redistribución o reutilización de los datos, ya sea de manera manual o automatizada, está prohibido sin el acuerdo correspondiente. Trovit también prohíbe el uso de técnicas de scraping para recolectar datos automáticamente de su plataforma.
-        A diferencia de otras plataformas que podrían otorgar licencias más flexibles, Trovit protege su contenido bajo una especie de licencia implícita de uso no comercial, permitiendo a los usuarios consultar la información, pero no re utilizarla para fines lucrativos sin obtener los permisos necesarios. Además, cualquier intento de explotar los datos sin seguir estos lineamientos puede derivar en sanciones legales, dado que Trovit protege fuertemente su propiedad intelectual.
-        ### Licencia y términos de uso en Pisos.com
-        Pisos.com es otro importante portal inmobiliario en España, que ofrece acceso a miles de anuncios de propiedades en venta y alquiler. Al igual que Trovit, Pisos.com protege su contenido bajo derechos de propiedad intelectual y establece restricciones para el uso de la información contenida en su plataforma.
-        Los Términos de Uso de Pisos.com indican que los usuarios pueden acceder a los datos y consultarlos, pero están sujetos a una licencia de uso personal y no comercial. Cualquier intento de recolección masiva de datos mediante técnicas automatizadas (como el scraping) o la redistribución de su contenido para fines comerciales, está prohibido sin obtener una autorización previa.
-        Esto significa que, si una empresa o entidad desea utilizar los datos de Pisos.com para elaborar estudios de mercado, análisis de precios o para crear modelos predictivos de valor inmobiliario, deberá negociar una licencia comercial con la plataforma. Esta licencia les permitirá acceder a los datos de forma legal y adecuada, evitando infracciones relacionadas con el uso indebido de la propiedad intelectual de la plataforma.
-        Además, Pisos.com se reserva el derecho de modificar sus condiciones en cualquier momento, lo que implica que los usuarios deben mantenerse informados sobre las actualizaciones en los términos de uso. Las plataformas pueden ajustar sus políticas en función del uso que se haga de los datos, especialmente cuando detectan comportamientos que infringen sus restricciones.
+        ## Referencias Bibliográficas
+        - https://www.pisos.com/
+        - https://casas.trovit.es/
+        - https://streamlit.io/
+        - https://www.openstreetmap.org/
+        - https://pypi.org/
         """)
