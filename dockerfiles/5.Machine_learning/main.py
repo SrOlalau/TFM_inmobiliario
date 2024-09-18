@@ -1,23 +1,45 @@
-import pandas as pd
-import numpy as np
-from sqlalchemy import create_engine, text
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split, cross_val_score
-from sklearn.preprocessing import StandardScaler, LabelEncoder
-from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
-import optuna
-import warnings
-import time
-from datetime import datetime
-import pickle
 import os
-from tqdm import tqdm
-import gc
-import requests  # Importar requests para enviar mensajes a Telegram
+import pickle
+import time
+import warnings
+from datetime import datetime
+
+import numpy as np
+import pandas as pd
+from sqlalchemy import create_engine, text  # Nuevo: Para cargar datos desde PostgreSQL
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split, cross_val_score  # cross_val_score para Optuna
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+import optuna  # Nuevo: Para optimización de hiperparámetros
+import gc  # Nuevo: Manejo de memoria
+import requests  # Nuevo: Para envío de mensajes a Telegram
 
 warnings.filterwarnings('ignore')
 
-# Configuración de la base de datos
+mejor_cv = {
+    'venta': {
+        'bootstrap': False,
+        'criterion': 'squared_error',
+        'max_depth': 20,
+        'max_features': 0.2,
+        'min_samples_split': 2,
+        'n_estimators': 150
+    },
+    'alquiler': {
+        'bootstrap': False,
+        'criterion': 'squared_error',
+        'max_depth': 50,
+        'max_features': 0.5,
+        'min_samples_split': 2,
+        'n_estimators': 150
+    }
+}
+
+# Configuración de la base de datos (Nuevo)
 DB_DEST = {
     "NAME": "datatuning",
     "USER": "datatuning",
@@ -27,10 +49,24 @@ DB_DEST = {
     "TABLE": "Datos_finales"
 }
 
-# Configuración de Telegram
-TELEGRAM_BOT_TOKEN = 'TU_TELEGRAM_BOT_TOKEN'
-TELEGRAM_CHAT_ID = 'TU_TELEGRAM_CHAT_ID'
+# Configuración de Telegram (Nuevo)
+TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
+TELEGRAM_CHAT_ID = '297175679'
 
+# Función de preprocesamiento general (Ya estaba)
+def divide_dataset_bycategory(df, cat_cols_split_on=None):
+    df_by_cat_cols = []
+    if cat_cols_split_on:
+        for col in cat_cols_split_on:
+            unique_values = df[col].unique()
+            for val in unique_values:
+                df_subset = df[df[col] == val].copy()
+                df_by_cat_cols.append((col, val, df_subset))
+        return df_by_cat_cols
+    else:
+        return [(None, None, df)]
+
+# Enviar mensaje a Telegram (Nuevo)
 def send_telegram_message(message):
     """Envía un mensaje a un chat de Telegram."""
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -45,92 +81,97 @@ def send_telegram_message(message):
     except Exception as e:
         print(f"Error al enviar mensaje a Telegram: {str(e)}")
 
+
+# Cargar datos desde PostgreSQL (Nuevo)
 def load_data_from_postgres(category):
     """Carga los datos desde PostgreSQL filtrando por categoría."""
     connection_string = f"postgresql://{DB_DEST['USER']}:{DB_DEST['PASSWORD']}@{DB_DEST['HOST']}:{DB_DEST['PORT']}/{DB_DEST['NAME']}"
     engine = create_engine(connection_string)
-    
+
     with engine.connect() as connection:
         query = text(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{DB_DEST['TABLE']}' AND data_type LIKE '%timestamp%'")
         result = connection.execute(query)
         date_columns = [row[0] for row in result]
 
-    # Envolver la consulta con text() para usar parámetros nombrados
     query = text(f'SELECT * FROM "{DB_DEST["TABLE"]}" WHERE alquiler_venta = :category')
     df = pd.read_sql(query, engine, params={'category': category}, parse_dates=date_columns)
     print(f"Tamaño del DataFrame cargado: {df.shape}")
     return df
 
-def process_features(df, target):
-    """Preprocesa las características del DataFrame."""
-    label_encoders = {}
-    columns_to_drop = []
-    # Identificar columnas categóricas y datetime
+
+# Crear pipeline para preprocesar variables (Ya estaba)
+def create_preprocessing_pipeline(df, target):
     categorical_columns = df.select_dtypes(include=['object']).columns
-    datetime_columns = df.select_dtypes(include=['datetime64', 'datetime64[ns]']).columns
-
-    print("Procesando características...")
-
-    # Eliminar columnas datetime
-    if len(datetime_columns) > 0:
-        print("Eliminando columnas datetime:", datetime_columns.tolist())
-        df = df.drop(columns=datetime_columns)
-
-    # Actualizar las columnas numéricas después de eliminar las datetime
     numerical_columns = df.select_dtypes(include=[np.number]).columns.drop(target)
 
-    # Procesar variables categóricas
-    for col in tqdm(categorical_columns, desc="Codificando variables categóricas"):
-        df[col] = df[col].astype(str)
-        unique_vals = df[col].nunique()
-        if unique_vals > 20:
-            columns_to_drop.append(col)
-        else:
-            df[col] = df[col].fillna('0')
-            le = LabelEncoder()
-            df[col] = le.fit_transform(df[col])
-            label_encoders[col] = le
-            df[col] = df[col].astype(np.int8)
+    low_cardinality_cols = [col for col in categorical_columns if df[col].nunique() <= 20]
 
-    # Escalar variables numéricas
-    if len(numerical_columns) > 0:
-        scaler = StandardScaler()
-        df[numerical_columns] = scaler.fit_transform(df[numerical_columns])
-        df[numerical_columns] = df[numerical_columns].astype(np.float32)
-    else:
-        scaler = None  # No hay variables numéricas para escalar
+    categorical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='constant', fill_value='missing')),
+        ('onehot', OneHotEncoder(handle_unknown='ignore'))
+    ])
 
-    # Eliminar columnas con un único valor
-    for col in df.columns:
-        if df[col].nunique() == 1:
-            columns_to_drop.append(col)
+    numerical_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='mean')),
+        ('scaler', StandardScaler())
+    ])
 
-    # Eliminar columnas no deseadas
-    df = df.drop(columns=columns_to_drop)
-    return df, scaler, label_encoders  # Retornamos label_encoders
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', numerical_transformer, numerical_columns),
+            ('cat', categorical_transformer, low_cardinality_cols)
+        ]
+    )
 
-def train_first_model(df, target):
-    """Entrena un modelo inicial y selecciona las características más importantes."""
+    return preprocessor
+
+
+# Crear pipeline para RandomForest (Ya estaba)
+def create_pipeline(preprocessor, dummy_info):
+    tipo_modelo = dummy_info[1]
+    params_modelo = mejor_cv[tipo_modelo]
+
+    model = RandomForestRegressor(**params_modelo)
+
+    pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', model)
+    ])
+
+    return pipeline
+
+
+# Entrenar el primer modelo para obtener las características más importantes (Ya estaba)
+def train_first_model(df, target, dummy_info):
+    preprocessor = create_preprocessing_pipeline(df, target)
+    pipeline = create_pipeline(preprocessor, dummy_info=dummy_info)
+
     X = df.drop(columns=[target])
     y = df[target]
-
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    print("Entrenando modelo inicial...")
-    model = RandomForestRegressor(n_estimators=100, random_state=42, n_jobs=-1)
-    model.fit(X_train, y_train)
+    pipeline.fit(X_train, y_train)
+    y_pred = pipeline.predict(X_test)
 
-    feature_importances = pd.Series(model.feature_importances_, index=X.columns)
+    mae, rmse, r2 = get_model_metrics(y_test, y_pred)
+
+    feature_importances = pd.Series(pipeline.named_steps['regressor'].feature_importances_,
+                                    index=pipeline.named_steps['preprocessor'].get_feature_names_out())
     top_50_features = feature_importances.nlargest(50).index
 
-    # Liberar memoria eliminando el modelo inicial
-    del model
-    gc.collect()
+    return top_50_features
 
-    return top_50_features, X_train, X_test, y_train, y_test
 
+# Obtener métricas del modelo (Ya estaba)
+def get_model_metrics(y_test, y_pred):
+    mae = mean_absolute_error(y_test, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+    r2 = r2_score(y_test, y_pred)
+    return mae, rmse, r2
+
+
+# Optimizador de hiperparámetros usando Optuna (Nuevo)
 def objective(trial, X, y):
-    """Función objetivo para Optuna."""
     params = {
         'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
         'max_depth': trial.suggest_int('max_depth', 10, 100),
@@ -146,8 +187,8 @@ def objective(trial, X, y):
     gc.collect()
     return score
 
+# Optimización de hiperparámetros con Optuna (Nuevo)
 def optimize_hyperparameters(X, y):
-    """Optimiza los hiperparámetros usando Optuna."""
     print("Optimizando hiperparámetros...")
     study = optuna.create_study(direction='minimize')
     study.optimize(lambda trial: objective(trial, X, y), n_trials=1, show_progress_bar=True)
@@ -156,140 +197,109 @@ def optimize_hyperparameters(X, y):
     print(study.best_params)
     return study.best_params
 
-def train_and_evaluate_model(X_train, X_test, y_train, y_test, best_params):
-    """Entrena el modelo con los mejores hiperparámetros y evalúa su rendimiento."""
-    print("Entrenando modelo final...")
-    model = RandomForestRegressor(**best_params, random_state=42, n_jobs=-1)
-    model.fit(X_train, y_train)
-    
-    print("Evaluando modelo...")
-    y_pred = model.predict(X_test)
-    mae = mean_absolute_error(y_test, y_pred)
-    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
-    r2 = r2_score(y_test, y_pred)
-    
-    print("\nEstadísticas del modelo:")
-    print(f"MAE: {mae}")
-    print(f"RMSE: {rmse}")
-    print(f"R2 Score: {r2}")
-    
-    feature_importances = pd.Series(model.feature_importances_, index=X_train.columns).sort_values(ascending=False)
-    print("\nTop 10 características más importantes:")
-    print(feature_importances.head(10))
-    
-    print("\nAlgunas predicciones de RandomForest:")
-    random_indices = np.random.choice(range(len(y_test)), size=6, replace=False)
-    for idx in random_indices:
-        real = y_test.iloc[idx]
-        pred = y_pred[idx]
-        print(f"Precio real: {real}, Precio predicho: {pred}")
-    
-    return model, feature_importances
 
-def export_model(model, features, category, label_encoders, base_dir='/resultado'):
+# Entrenar el modelo final con los hiperparámetros de Optuna (Modificado)
+def train_final_model(df, target, top_features, best_params, dummy_info=None):
     """
-    Exporta el modelo entrenado y las características a un archivo pickle.
+    Entrena el modelo final usando los hiperparámetros optimizados y guarda el pipeline en la ruta /resultado.
     
-    Args:
-    model: El modelo entrenado para exportar.
-    features: Lista de características utilizadas para entrenar el modelo.
-    category: La categoría del modelo (venta o alquiler).
-    label_encoders: Diccionario de LabelEncoders utilizados.
-    base_dir: El directorio base donde se guardará el modelo.
-    
-    Returns:
-    str: La ruta completa donde se guardó el modelo.
+    Parámetros:
+    - df: DataFrame original.
+    - target: Nombre de la columna objetivo.
+    - top_features: Lista de las características más importantes.
+    - best_params: Hiperparámetros optimizados por Optuna.
+    - dummy_info: Información sobre la categoría (opcional).
     """
-    directories = [
-        base_dir,
-        '/app/resultado',
-        os.path.join(os.getcwd(), 'resultado'),
-        os.path.expanduser('~/resultado')
-    ]
-    
-    # Crear un diccionario que contenga tanto el modelo como las características y label_encoders
-    model_data = {
-        'model': model,
-        'features': features,  # Guardar las características utilizadas
-        'label_encoders': label_encoders  # Guardar los LabelEncoders
-    }
-    
-    for directory in directories:
-        try:
-            os.makedirs(directory, exist_ok=True)
-            model_filename = f'modelo_{category}.pickle'
-            full_path = os.path.join(directory, model_filename)
-            
-            print(f"Guardando modelo en {full_path}...")
-            with open(full_path, 'wb') as f:
-                pickle.dump(model_data, f)  # Guardar el diccionario en lugar del modelo solo
-            
-            print(f"Modelo guardado exitosamente en: {full_path}")
-            return full_path
-        except Exception as e:
-            print(f"No se pudo guardar en {directory}. Error: {str(e)}")
-    
-    raise Exception("No se pudo guardar el modelo en ninguna ubicación.")
+    # Validar y coincidir las características importantes con las columnas originales
+    matched_columns = validate_var_names(df, top_features)
+    matched_columns.append(target)
 
-def main(target='precio', category='venta'):
+    # Filtrar el DataFrame para incluir solo las columnas coincidentes
+    df_filtered = df[matched_columns]
+
+    # Crear preprocesador
+    preprocessor = create_preprocessing_pipeline(df_filtered, target)
+
+    # Aplicar los hiperparámetros optimizados por Optuna en lugar de los predeterminados
+    model = RandomForestRegressor(**best_params, random_state=42)
+
+    # Crear pipeline con el preprocesador y el modelo optimizado
+    pipeline = Pipeline(steps=[
+        ('preprocessor', preprocessor),
+        ('regressor', model)
+    ])
+
+    # Dividir el conjunto de datos en entrenamiento y prueba
+    X = df_filtered.drop(columns=[target])
+    y = df_filtered[target]
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Entrenar el pipeline
+    pipeline.fit(X_train, y_train)
+
+    # Realizar predicciones
+    y_pred = pipeline.predict(X_test)
+    
+    # Calcular métricas
+    mae, rmse, r2 = get_model_metrics(y_test, y_pred)
+
+    # Crear directorio 'resultado' si no existe
+    models_dir = '/resultado'
+    os.makedirs(models_dir, exist_ok=True)
+
+    # Guardar el pipeline final en un archivo .pickle
+    if dummy_info is None:
+        pkl_filename = "random_forest_pipeline.pickle"
+    else:
+        pkl_filename = f"random_forest_pipeline_{dummy_info[0]}_{dummy_info[1]}.pickle"
+
+    pickle_path = os.path.join(models_dir, pkl_filename)
+
+    # Crear diccionario con el pipeline y las características
+    features = {'colums': matched_columns,
+                'options_range': range_describe(df, matched_columns)}
+
+    to_save = {'pipeline': pipeline,
+               'features': features}
+
+    # Guardar el pipeline completo e información de las características en el archivo .pickle
+    with open(pickle_path, 'wb') as f:
+        pickle.dump(to_save, f, pickle.HIGHEST_PROTOCOL)
+
+    # Mostrar las métricas calculadas
+    print_rf_stats(df_filtered, X_train, X_test, mae, rmse, r2, y_test, y_pred, pipeline)
+
+
+# Función principal modificada para incluir la optimización de hiperparámetros con Optuna (Modificado)
+def main(target='precio', dummies=['alquiler_venta']):
     start_time = time.time()
     print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
 
     # Enviar mensaje de inicio a Telegram
-    send_telegram_message(f"Iniciando machine learning de {category}")
+    send_telegram_message(f"Iniciando machine learning de {dummies[0]}")
 
-    df = load_data_from_postgres(category)
-    
-    print(f"\nEntrenando modelo para {category}...")
+    # Cargar los datos desde la base de datos
+    df = load_data_from_postgres(dummies[0])
 
-    df_processed, _, label_encoders = process_features(df, target)  # Obtenemos label_encoders
-    del df  # Liberar memoria
-    gc.collect()
+    # Dividir el DataFrame por categoría
+    dummy_dfs = divide_dataset_bycategory(df, dummies)
 
-    top_50_features, X_train, X_test, y_train, y_test = train_first_model(df_processed, target)
-    del df_processed  # Liberar memoria
-    gc.collect()
+    for dummy_info, val, df_dummy in dummy_dfs:
+        if dummy_info and val:
+            print(f"Entrenando modelos para {dummy_info}={val}...")
+        else:
+            print("Entrenando modelo general...")
 
-    X_train_top = X_train[top_50_features]
-    X_test_top = X_test[top_50_features]
-    del X_train, X_test  # Liberar memoria
-    gc.collect()
+        # Entrenar el primer modelo y obtener las 50 características más importantes
+        top_50_features = train_first_model(df_dummy, target, dummy_info=(dummy_info, val))
 
-    best_params = optimize_hyperparameters(X_train_top, y_train)
+        # Optimizar los hiperparámetros usando Optuna
+        X_train_top = df_dummy[top_50_features]
+        y_train_top = df_dummy[target]
+        best_params = optimize_hyperparameters(X_train_top, y_train_top)  # Modificado: Optimización de hiperparámetros
 
-    final_model, feature_importances = train_and_evaluate_model(X_train_top, X_test_top, y_train, y_test, best_params)
-
-    print("\nResumen del modelo:")
-    print(f"Número de características utilizadas: {len(top_50_features)}")
-    print(f"Tamaño del conjunto de entrenamiento: {X_train_top.shape}")
-    print(f"Tamaño del conjunto de prueba: {X_test_top.shape}")
-    print("\nMejores hiperparámetros:")
-    for param, value in best_params.items():
-        print(f"{param}: {value}")
-
-    # Guardar el modelo junto con las características y label_encoders
-    try:
-        saved_path = export_model(final_model, top_50_features, category, label_encoders)
-        print(f"Modelo guardado en: {saved_path}")
-    except Exception as e:
-        print(f"Error al guardar el modelo: {str(e)}")
-
-    # Construir mensaje de resumen para Telegram
-    summary_message = (
-        f"Machine learning finalizado para {category}\n\n"
-        f"Número de características utilizadas: {len(top_50_features)}\n"
-        f"Tamaño del conjunto de entrenamiento: {X_train_top.shape}\n"
-        f"Tamaño del conjunto de prueba: {X_test_top.shape}\n"
-        "\nMejores hiperparámetros:\n"
-        + "\n".join([f"{param}: {value}" for param, value in best_params.items()])
-    )
-
-    # Enviar mensaje de finalización a Telegram
-    send_telegram_message(summary_message)
-
-    # Liberar memoria final
-    del X_train_top, X_test_top, y_train, y_test, final_model, feature_importances
-    gc.collect()
+        # Entrenar el modelo final usando los hiperparámetros optimizados
+        train_final_model(df_dummy, target, top_50_features, best_params, dummy_info=(dummy_info, val))  # Modificado: Pasar los hiperparámetros optimizados
 
     end_time = time.time()
     elapsed_time = end_time - start_time
@@ -298,4 +308,4 @@ def main(target='precio', category='venta'):
     print(f"\nTiempo total de ejecución: {int(hours)}h {int(minutes)}m {int(seconds)}s")
 
 if __name__ == '__main__':
-    main(category='venta')  # Cambia 'venta' por 'alquiler' según lo que necesites entrenar
+    main()
