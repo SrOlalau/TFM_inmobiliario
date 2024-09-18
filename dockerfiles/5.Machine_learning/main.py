@@ -82,22 +82,18 @@ def send_telegram_message(message):
         print(f"Error al enviar mensaje a Telegram: {str(e)}")
 
 
-# Cargar datos desde PostgreSQL (Nuevo)
-def load_data_from_postgres(category):
-    """Carga los datos desde PostgreSQL filtrando por categoría."""
+# Cargar datos desde PostgreSQL sin procesar las columnas de tipo fecha
+def load_data_from_postgres():
+    """Carga todos los datos desde PostgreSQL sin especificar columnas de fecha."""
     connection_string = f"postgresql://{DB_DEST['USER']}:{DB_DEST['PASSWORD']}@{DB_DEST['HOST']}:{DB_DEST['PORT']}/{DB_DEST['NAME']}"
     engine = create_engine(connection_string)
 
-    with engine.connect() as connection:
-        query = text(f"SELECT column_name, data_type FROM information_schema.columns WHERE table_name = '{DB_DEST['TABLE']}' AND data_type LIKE '%timestamp%'")
-        result = connection.execute(query)
-        date_columns = [row[0] for row in result]
-
-    query = text(f'SELECT * FROM "{DB_DEST["TABLE"]}" WHERE alquiler_venta = :category')
-    df = pd.read_sql(query, engine, params={'category': category}, parse_dates=date_columns)
+    # Cargar todos los datos de la tabla sin ningún filtro y sin procesar columnas de fecha
+    query = text(f'SELECT * FROM "{DB_DEST["TABLE"]}"')
+    df = pd.read_sql(query, engine)
+    
     print(f"Tamaño del DataFrame cargado: {df.shape}")
     return df
-
 
 # Crear pipeline para preprocesar variables (Ya estaba)
 def create_preprocessing_pipeline(df, target):
