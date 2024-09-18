@@ -106,8 +106,7 @@ def data_tuning():
     df['fecha_extract'] = pd.to_datetime(df['fecha_extract'], format='%Y-%m-%d')
     
     # Cálculo de mes_publicado
-    fecha_mas_antigua = df['fecha_extract'].min()
-    df['mes_publicado'] = (df['fecha_extract'].dt.to_period('M') - fecha_mas_antigua.to_period('M')).apply(lambda x: x.n + 1)
+    df['mes_publicado'] = df['fecha_extract'].dt.month
 
     # Ahora que hemos creado todas las columnas necesarias, eliminamos las que no queremos
     df = df.drop(columns=['publicado_hace', 'plataforma', 'raw_json', 'fuente_datos'])
