@@ -266,7 +266,7 @@ def price_distribution_by_region(data, folder):
         lower_bound, upper_bound = data[col].quantile([0.0, 0.9])
 
         # Filtrar las comunidades autónomas únicas
-        unique_regions = data['CCAA'].dropna().unique()
+        unique_regions = data['ccaa'].dropna().unique()
 
         # Crear listas para almacenar los precios y etiquetas
         prices_by_region = []
@@ -274,7 +274,7 @@ def price_distribution_by_region(data, folder):
 
         # Iterar sobre cada comunidad autónoma y extraer los precios correspondientes
         for region in unique_regions:
-            regional_prices = data[data['CCAA'] == region][col].dropna()
+            regional_prices = data[data['ccaa'] == region][col].dropna()
             if not regional_prices.empty:  # Asegurar que no esté vacío
                 prices_by_region.append(regional_prices.tolist())
                 labels.append(region)
