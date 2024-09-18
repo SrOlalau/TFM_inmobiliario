@@ -19,6 +19,16 @@ import gc  # Nuevo: Manejo de memoria
 import requests  # Nuevo: Para envío de mensajes a Telegram
 
 warnings.filterwarnings('ignore')
+# Extra porque daba error
+def clean_numeric_columns(df):
+    """Convierte las columnas numéricas y reemplaza los valores no numéricos con NaN."""
+    for col in df.select_dtypes(include=['object']).columns:
+        try:
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        except ValueError:
+            print(f"No se pudo convertir la columna {col} a numérico.")
+    return df
+
 
 def validate_var_names(df, model_columns):
     """
@@ -308,8 +318,15 @@ def main(target='precio', dummies=['alquiler_venta']):
     # Enviar mensaje de inicio a Telegram
     send_telegram_message(f"Iniciando machine learning de {dummies[0]}")
 
-    # Cargar los datos desde la base de datos
+    # Cargar los datos desde la base de datos y limpiar las columnas numéricas
     df = load_data_from_postgres()
+    
+    # Limpiar las columnas numéricas, reemplazando los valores no numéricos con NaN
+    #Extra por el error
+    df = clean_numeric_columns(df)
+    
+    print(f"Tamaño del DataFrame después de limpiar las columnas numéricas: {df.shape}")
+
 
     # Dividir el DataFrame por categoría
     dummy_dfs = divide_dataset_bycategory(df, dummies)
