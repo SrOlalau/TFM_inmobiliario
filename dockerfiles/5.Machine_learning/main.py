@@ -217,8 +217,8 @@ def objective(trial, X, y, preprocessor):
     """
     # Parámetros sugeridos por Optuna para RandomForest
     params = {
-        'n_estimators': trial.suggest_int('n_estimators', 100, 1000),
-        'max_depth': trial.suggest_int('max_depth', 10, 100),
+        'n_estimators': trial.suggest_int('n_estimators', 100, 200),  # 100,1000
+        'max_depth': trial.suggest_int('max_depth', 10, 20),          #10,100
         'min_samples_split': trial.suggest_int('min_samples_split', 2, 10),
         'min_samples_leaf': trial.suggest_int('min_samples_leaf', 1, 10),
         'max_features': trial.suggest_categorical('max_features', ['sqrt', 'log2', None]),
@@ -376,7 +376,7 @@ def main(target='precio', dummies=['alquiler_venta']):
         best_params = optimize_hyperparameters(X_train_top, y_train_top, preprocessor)  # Modificado: Pasa el preprocesador
 
         # Entrenar el modelo final usando los hiperparámetros optimizados
-        train_final_model(df_dummy, target, matched_columns, best_params, dummy_info=(dummy_info, val))  # Modificado: Pasar los hiperparámetros optimizados
+        train_final_model(df_dummy, target, top_50_features, best_params, dummy_info=(dummy_info, val))  # Modificado: Pasar los hiperparámetros optimizados
 
     end_time = time.time()
     elapsed_time = end_time - start_time
