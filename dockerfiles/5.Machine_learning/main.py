@@ -28,8 +28,8 @@ DB_DEST = {
 }
 
 # Configuración de Telegram
-TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
-TELEGRAM_CHAT_ID = '297175679'
+TELEGRAM_BOT_TOKEN = 'TU_TELEGRAM_BOT_TOKEN'
+TELEGRAM_CHAT_ID = 'TU_TELEGRAM_CHAT_ID'
 
 def send_telegram_message(message):
     """Envía un mensaje a un chat de Telegram."""
@@ -107,7 +107,7 @@ def process_features(df, target):
 
     # Eliminar columnas no deseadas
     df = df.drop(columns=columns_to_drop)
-    return df, scaler, label_encoders
+    return df, scaler, label_encoders  # Retornamos label_encoders
 
 def train_first_model(df, target):
     """Entrena un modelo inicial y selecciona las características más importantes."""
@@ -150,7 +150,7 @@ def optimize_hyperparameters(X, y):
     """Optimiza los hiperparámetros usando Optuna."""
     print("Optimizando hiperparámetros...")
     study = optuna.create_study(direction='minimize')
-    study.optimize(lambda trial: objective(trial, X, y), n_trials=1, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, X, y), n_trials=10, show_progress_bar=True)
     
     print("Mejores hiperparámetros encontrados:")
     print(study.best_params)
@@ -186,7 +186,7 @@ def train_and_evaluate_model(X_train, X_test, y_train, y_test, best_params):
     
     return model, feature_importances
 
-def export_model(model, features, category, base_dir='/resultado'):
+def export_model(model, features, category, label_encoders, base_dir='/resultado'):
     """
     Exporta el modelo entrenado y las características a un archivo pickle.
     
@@ -194,6 +194,7 @@ def export_model(model, features, category, base_dir='/resultado'):
     model: El modelo entrenado para exportar.
     features: Lista de características utilizadas para entrenar el modelo.
     category: La categoría del modelo (venta o alquiler).
+    label_encoders: Diccionario de LabelEncoders utilizados.
     base_dir: El directorio base donde se guardará el modelo.
     
     Returns:
@@ -206,10 +207,11 @@ def export_model(model, features, category, base_dir='/resultado'):
         os.path.expanduser('~/resultado')
     ]
     
-    # Crear un diccionario que contenga tanto el modelo como las características
+    # Crear un diccionario que contenga tanto el modelo como las características y label_encoders
     model_data = {
-        'pipeline': model,
-        'features': features  # Guardar las características utilizadas
+        'model': model,
+        'features': features,  # Guardar las características utilizadas
+        'label_encoders': label_encoders  # Guardar los LabelEncoders
     }
     
     for directory in directories:
@@ -240,7 +242,7 @@ def main(target='precio', category='alquiler'):
     
     print(f"\nEntrenando modelo para {category}...")
 
-    df_processed, _, _ = process_features(df, target)
+    df_processed, _, label_encoders = process_features(df, target)  # Obtenemos label_encoders
     del df  # Liberar memoria
     gc.collect()
 
@@ -265,9 +267,9 @@ def main(target='precio', category='alquiler'):
     for param, value in best_params.items():
         print(f"{param}: {value}")
 
-    # Guardar el modelo junto con las características
+    # Guardar el modelo junto con las características y label_encoders
     try:
-        saved_path = export_model(final_model, top_50_features, category)
+        saved_path = export_model(final_model, top_50_features, category, label_encoders)
         print(f"Modelo guardado en: {saved_path}")
     except Exception as e:
         print(f"Error al guardar el modelo: {str(e)}")
