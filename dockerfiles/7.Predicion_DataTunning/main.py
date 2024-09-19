@@ -63,21 +63,16 @@ def check_and_create_table(conn, table_name):
             conn.commit()
         return exists
 
-# Cargar los datos de la base de datos de origen (datatuning)
+# Cargar todos los datos de la base de datos de origen (datatuning)
 def load_data_from_source():
     engine = create_db_engine(DB_DEST)
     query = f'SELECT * FROM "{DB_DEST["TABLE"]}";'
+    
+    # Cargar todos los datos de la tabla en RAM
     df = pd.read_sql(text(query), engine)
+    
     engine.dispose()
     return df
-
-# Insertar los datos en la base de datos de destino (pred)
-def insert_data_to_pred(df):
-    engine = create_db_engine(DB_PRED)
-    conn = engine.raw_connection()
-    df.to_sql(DB_PRED['TABLE'], engine, if_exists='append', index=False)
-    conn.commit()
-    conn.close()
 
 # Cargar modelos desde archivos pickle
 def load_models():
@@ -114,47 +109,64 @@ def load_models():
 def update_predictions_and_ratios():
     engine = create_db_engine(DB_PRED)
     
-    # Cargar modelos
+    # Cargar los modelos
     venta_model, alquiler_model = load_models()
     
-    # Traer los datos de la tabla pred
-    df_pred = pd.read_sql(f"SELECT * FROM {DB_PRED['TABLE']};", engine)
-    
+    # Cargar toda la base de datos en RAM
+    df_pred = load_data_from_source()  # Ahora carga toda la base de datos
+
     # Filtrar datos según el tipo de operación: alquiler o venta
-    df_pred_alquiler = df_pred[df_pred['alquiler_venta'] == 'alquiler']
-    df_pred_ventas = df_pred[df_pred['alquiler_venta'] == 'venta']
+    df_pred_alquiler = df_pred[df_pred['alquiler_venta'] == 'alquiler'].copy()  # Copia para evitar errores
+    df_pred_ventas = df_pred[df_pred['alquiler_venta'] == 'venta'].copy()       # Copia para evitar errores
 
     # Generar predicciones para alquiler y ventas
-    df_pred_alquiler['precio_estimado'] = alquiler_model.predict(df_pred_alquiler)
-    df_pred_ventas['precio_estimado'] = venta_model.predict(df_pred_ventas)
+    if not df_pred_alquiler.empty:
+        df_pred_alquiler['predicion'] = alquiler_model.predict(df_pred_alquiler)
+        df_pred_alquiler['ratio'] = df_pred_alquiler['predicion'] / df_pred_alquiler['precio']
 
-    # Calcular el ratio (precio estimado / precio real)
-    df_pred_alquiler["ratio"] = df_pred_alquiler['precio_estimado'] / df_pred_alquiler['precio']
-    df_pred_ventas["ratio"] = df_pred_ventas['precio_estimado'] / df_pred_ventas['precio']
+    if not df_pred_ventas.empty:
+        df_pred_ventas['predicion'] = venta_model.predict(df_pred_ventas)
+        df_pred_ventas['ratio'] = df_pred_ventas['predicion'] / df_pred_ventas['precio']
     
-    # Insertar o actualizar predicciones en la tabla SQL
-    insert_predictions_to_db(df_pred_alquiler, df_pred_ventas, engine)
+    # Insertar o actualizar las predicciones en la tabla pred, manteniendo la estructura original
+    upsert_predictions_to_db(df_pred_alquiler, df_pred_ventas, engine)
 
-# Insertar predicciones en la base de datos
-def insert_predictions_to_db(df_pred_alquiler, df_pred_ventas, engine):
-    # Conexión a la base de datos
-    conn = engine.raw_connection()
+def upsert_predictions_to_db(df_pred_alquiler, df_pred_ventas, engine):
+    conn = engine.connect()
 
-    # Inserta los datos de alquiler en la tabla de predicciones, con opción de 'replace' para actualizar
-    df_pred_alquiler.to_sql(DB_PRED['TABLE'], engine, if_exists='replace', index=False)
+    # Limpiar la tabla destino antes de la inserción
+    conn.execute(text(f"DELETE FROM {DB_PRED['TABLE']}"))
 
-    # Inserta los datos de ventas en la tabla de predicciones, con opción de 'replace' para actualizar
-    df_pred_ventas.to_sql(DB_PRED['TABLE'], engine, if_exists='replace', index=False)
+    # Si hay datos de alquiler, hacer la inserción directa en la tabla de predicciones
+    if not df_pred_alquiler.empty:
+        df_pred_alquiler.to_sql(DB_PRED['TABLE'], conn, if_exists='append', index=False)
 
-    # Confirmar y cerrar la conexión
-    conn.commit()
+    # Si hay datos de ventas, hacer la inserción directa en la tabla de predicciones
+    if not df_pred_ventas.empty:
+        df_pred_ventas.to_sql(DB_PRED['TABLE'], conn, if_exists='append', index=False)
+
     conn.close()
+
+
+# Cargar los datos de la base de datos en RAM y tomar una muestra de 10 filas
+def load_data_sample():
+    engine = create_db_engine(DB_DEST)
+    query = f'SELECT * FROM "{DB_DEST["TABLE"]}";'
+    
+    # Cargar todos los datos en RAM
+    df = pd.read_sql(text(query), engine)
+    
+    # Tomar una muestra aleatoria de 10 filas para pruebas
+    df_sample = df.sample(n=10, random_state=42)
+    
+    engine.dispose()
+    return df_sample
 
 
 # Función principal que ejecuta todo el flujo
 def main():
     print("Iniciando el proceso principal...")
-    print
+    
     # Paso 1: Conectarse a la base de datos 'pred' y comprobar/crear tabla
     print("Paso 1: Conectando a la base de datos 'pred' y comprobando/creando tabla...")
     engine_pred = create_db_engine(DB_PRED)
@@ -162,15 +174,8 @@ def main():
     table_existed = check_and_create_table(conn_pred, DB_PRED["TABLE"])
     print(f"La tabla {'ya existía' if table_existed else 'ha sido creada'}")
     
-    # Paso 2: Cargar los datos desde 'datatuning' y moverlos a 'pred'
-    print("Paso 2: Cargando datos desde 'datatuning' y moviéndolos a 'pred'...")
-    df_source = load_data_from_source()
-    print(f"Cargados {len(df_source)} registros de 'datatuning'")
-    insert_data_to_pred(df_source)
-    print("Datos insertados en 'pred'")
-
-    # Paso 3: Cargar los modelos y realizar las predicciones
-    print("Paso 3: Cargando modelos y realizando predicciones...")
+    # Paso 2: Cargar los modelos y realizar las predicciones
+    print("Paso 2: Cargando modelos y realizando predicciones...")
     update_predictions_and_ratios()
     print("Predicciones actualizadas")
 
