@@ -57,11 +57,6 @@ def cargar_datos_filtrados(selected_ccaa):
     df = df.dropna(subset=['latitude', 'longitude'])
     df = df.drop_duplicates(subset=['latitude', 'longitude'], keep='first')
 
-    # Calcular la distancia desde el centro y mantener los puntos cercanos al centro
-    center_lat = ccaa_dict[selected_ccaa]['center_lat']
-    center_lon = ccaa_dict[selected_ccaa]['center_lon']
-    df['distance_from_center'] = np.sqrt((df['latitude'] - center_lat) ** 2 + (df['longitude'] - center_lon) ** 2)
-
     return df
 
 
@@ -81,36 +76,29 @@ def predecir_precio(df, modelo):
     Realiza predicciones de precios para cada punto en el dataframe.
     """
     df['precio_estimado'] = modelo.predict(df)
+    return df
+
+def generar_voronoi_map(df, center_lat, center_lon, tasa=False):
+    """
+    Genera un mapa de calor usando diagramas de Voronoi.
+    """
 
     perc_1 = df['precio_estimado'].quantile(0.01)
     perc_95 = df['precio_estimado'].quantile(0.99)
     df = df[(df['precio_estimado'] >= perc_1) & (df['precio_estimado'] <= perc_95)]
-    return df
 
-def generar_voronoi_map(df, center_lat, center_lon):
-    """
-    Genera un mapa de calor usando diagramas de Voronoi.
-    """
     transformer = Transformer.from_crs("EPSG:4326", "EPSG:3857", always_xy=True)
 
     # Crear el mapa centrado en la ubicación deseada con la capa base Stadia Stamen Toner Background
     mapa = folium.Map(
         location=[center_lat, center_lon],
-        tiles=None,  # Sin capa base predeterminada
-        zoom_start=13,
-        width='100%',
-        height='80%'
-    )
-
-    # Agregar capa de fondo: Stadia Stamen Toner Background
-    folium.TileLayer(
-        tiles='https://tiles.stadiamaps.com/tiles/stamen_toner_background/{z}/{x}/{y}{r}.png',
+        tiles='https://tiles.stadiamaps.com/tiles/stamen_toner_lite/{z}/{x}/{y}{r}.png',
         attr='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         name='Fondo Marítimo',
         min_zoom=0,
         max_zoom=20,
-        overlay=False
-    ).add_to(mapa)
+        zoom_start=13
+    )
 
     # Calcular el diagrama de Voronoi
     points = df[['longitude', 'latitude']].to_numpy()
@@ -179,6 +167,11 @@ def generar_voronoi_map(df, center_lat, center_lon):
     for _, row in df.iterrows():
         color = colormap(norm(row['precio_estimado']))
         hex_color = '#{:02x}{:02x}{:02x}'.format(int(color[0] * 255), int(color[1] * 255), int(color[2] * 255))
+        if tasa:
+            popup_text = f"Tasa estimada: {row['precio_estimado'] * 100:.2f}%"
+        else:
+            popup_text = f"Precio estimado: {row['precio_estimado']:.2f}€"
+
         folium.Circle(
             location=(row['latitude'], row['longitude']),
             radius=30,  # Radio fijo de 25 metros
@@ -186,26 +179,28 @@ def generar_voronoi_map(df, center_lat, center_lon):
             fill=True,
             fill_opacity=0.85,
             stroke=False,
-            popup=f"Precio estimado: {row['precio_estimado']:.2f}€"
+            popup=popup_text,
         ).add_to(mapa)
 
-    # Agregar capa de etiquetas: nombres de ciudades y barrios
-    folium.TileLayer(
-        tiles='https://tiles.stadiamaps.com/tiles/stamen_terrain_labels/{z}/{x}/{y}{r}.png',
-        attr='&copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://www.stamen.com/" target="_blank">Stamen Design</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        name='Etiquetas de Terreno',
-        min_zoom=0,
-        max_zoom=18,
-        overlay=True
-    ).add_to(mapa)
-
     # Crear un colorbar usando branca
-    colorbar = bcm.LinearColormap(
-        [colormap(norm(v)) for v in [df['precio_estimado'].min(), df['precio_estimado'].max()]],
-        vmin=df['precio_estimado'].min(),
-        vmax=df['precio_estimado'].max(),
-        caption='Precio Estimado (€)'
-    )
+    if tasa:
+        # Convertir valores de 'precio_estimado' a porcentajes
+        min_value = df['precio_estimado'].min() * 100
+        max_value = df['precio_estimado'].max() * 100
+
+        colorbar = bcm.LinearColormap(
+            [colormap(norm(v)) for v in [df['precio_estimado'].min(), df['precio_estimado'].max()]],
+            vmin=min_value,
+            vmax=max_value,
+            caption='Tasa estimada (%)'
+        )
+    else:
+        colorbar = bcm.LinearColormap(
+            [colormap(norm(v)) for v in [df['precio_estimado'].min(), df['precio_estimado'].max()]],
+            vmin=df['precio_estimado'].min(),
+            vmax=df['precio_estimado'].max(),
+            caption='Precio Estimado (€)'
+        )
 
     # Agregar el colorbar al mapa
     colorbar.add_to(mapa)
@@ -240,15 +235,31 @@ def main():
         features = features_venta
         modelo = pipeline_venta
 
-    if st.button("Generar Mapa de Calor"):
+    if st.button(f"Generar mapa de precios"):
         df_filtrado = cargar_datos_filtrados(selected_ccaa)
         # Preparar entradas para el modelo usando los valores seleccionados por el usuario
         df_preparado = preparar_entradas_para_modelo(df_filtrado, mt2=mt2, habitaciones=habitaciones, banios=banios)
-        df_predicciones = predecir_precio(df_preparado, modelo)
+        df_predicciones = predecir_precio(df_preparado.copy(), modelo)
 
         mapa_voronoi = generar_voronoi_map(df_predicciones, ccaa_dict[selected_ccaa]['center_lat'],
                                            ccaa_dict[selected_ccaa]['center_lon'])
 
+        st.subheader(f'Mapa de calor de precios de {modelo_seleccionado}')
+        folium_static(mapa_voronoi)
+
+    if st.button("Generar mapa de tasas"):
+        df_filtrado = cargar_datos_filtrados(selected_ccaa)
+        # Preparar entradas para el modelo usando los valores seleccionados por el usuario
+        df_preparado = preparar_entradas_para_modelo(df_filtrado, mt2=mt2, habitaciones=habitaciones, banios=banios)
+        df_pred_alquiler = predecir_precio(df_preparado.copy(), pipeline_alquiler)
+        df_pred_venta = predecir_precio(df_preparado.copy(), pipeline_venta)
+        df_pred = df_preparado
+        df_pred['precio_estimado'] = df_pred_alquiler['precio_estimado']*12/df_pred_venta['precio_estimado']
+
+        mapa_voronoi = generar_voronoi_map(df_pred, ccaa_dict[selected_ccaa]['center_lat'],
+                                           ccaa_dict[selected_ccaa]['center_lon'], tasa=True)
+
+        st.subheader(f'Mapa de calor de Tasa anual: alquiler x 12 / venta')
         folium_static(mapa_voronoi)
 
 
