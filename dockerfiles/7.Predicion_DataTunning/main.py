@@ -113,40 +113,48 @@ def load_models():
 # Actualizar predicciones y ratio en la base de datos pred
 def update_predictions_and_ratios():
     engine = create_db_engine(DB_PRED)
-    conn = engine.raw_connection()
     
+    # Cargar modelos
     venta_model, alquiler_model = load_models()
     
     # Traer los datos de la tabla pred
     df_pred = pd.read_sql(f"SELECT * FROM {DB_PRED['TABLE']};", engine)
-
-    for index, row in df_pred.iterrows():
-        # Seleccionar el modelo adecuado en base al valor de alquiler_venta
-        if row['alquiler_venta'] == 'venta':
-            input_data = pd.DataFrame([row[['precio']]])  # Convertir la fila en DataFrame para el modelo
-            pred = venta_model.predict(input_data)[0]
-        else:
-            input_data = pd.DataFrame([row[['precio']]])  # Convertir la fila en DataFrame para el modelo
-            pred = alquiler_model.predict(input_data)[0]
-        
-        # Calcular el ratio
-        ratio = pred / row['precio'] if row['precio'] != 0 else 0
-
-        # Actualizar en la base de datos
-        with conn.cursor() as cur:
-            cur.execute(f"""
-                UPDATE {DB_PRED['TABLE']}
-                SET predicion = %s, ratio = %s
-                WHERE id = %s;
-            """, (pred, ratio, row['id']))
-        conn.commit()
     
+    # Filtrar datos según el tipo de operación: alquiler o venta
+    df_pred_alquiler = df_pred[df_pred['alquiler_venta'] == 'alquiler']
+    df_pred_ventas = df_pred[df_pred['alquiler_venta'] == 'venta']
+
+    # Generar predicciones para alquiler y ventas
+    df_pred_alquiler['precio_estimado'] = alquiler_model.predict(df_pred_alquiler)
+    df_pred_ventas['precio_estimado'] = venta_model.predict(df_pred_ventas)
+
+    # Calcular el ratio (precio estimado / precio real)
+    df_pred_alquiler["ratio"] = df_pred_alquiler['precio_estimado'] / df_pred_alquiler['precio']
+    df_pred_ventas["ratio"] = df_pred_ventas['precio_estimado'] / df_pred_ventas['precio']
+    
+    # Insertar o actualizar predicciones en la tabla SQL
+    insert_predictions_to_db(df_pred_alquiler, df_pred_ventas, engine)
+
+# Insertar predicciones en la base de datos
+def insert_predictions_to_db(df_pred_alquiler, df_pred_ventas, engine):
+    # Conexión a la base de datos
+    conn = engine.raw_connection()
+
+    # Inserta los datos de alquiler en la tabla de predicciones, con opción de 'replace' para actualizar
+    df_pred_alquiler.to_sql(DB_PRED['TABLE'], engine, if_exists='replace', index=False)
+
+    # Inserta los datos de ventas en la tabla de predicciones, con opción de 'replace' para actualizar
+    df_pred_ventas.to_sql(DB_PRED['TABLE'], engine, if_exists='replace', index=False)
+
+    # Confirmar y cerrar la conexión
+    conn.commit()
     conn.close()
+
 
 # Función principal que ejecuta todo el flujo
 def main():
     print("Iniciando el proceso principal...")
-    
+    print
     # Paso 1: Conectarse a la base de datos 'pred' y comprobar/crear tabla
     print("Paso 1: Conectando a la base de datos 'pred' y comprobando/creando tabla...")
     engine_pred = create_db_engine(DB_PRED)
