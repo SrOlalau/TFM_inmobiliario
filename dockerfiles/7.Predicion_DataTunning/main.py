@@ -42,11 +42,20 @@ def check_and_create_table(conn, table_name):
         exists = cur.fetchone()[0]
         
         if not exists:
+            # Obtener la estructura de la tabla de origen
+            engine_source = create_db_engine(DB_DEST)
+            with engine_source.connect() as conn_source:
+                result = conn_source.execute(text(f"SELECT * FROM \"{DB_DEST['TABLE']}\" LIMIT 0"))
+                column_names = result.keys()
+            
+            # Crear la tabla en la base de datos de destino
+            columns = ', '.join([f"\"{col}\" VARCHAR" for col in column_names])
             cur.execute(f"""
-                CREATE TABLE {table_name} AS 
-                SELECT *, NULL::DOUBLE PRECISION AS predicion, NULL::DOUBLE PRECISION AS ratio 
-                FROM "{DB_DEST['TABLE']}"  -- Comillas dobles para sensibilidad a mayúsculas
-                LIMIT 0;
+                CREATE TABLE {table_name} (
+                    {columns},
+                    predicion DOUBLE PRECISION,
+                    ratio DOUBLE PRECISION
+                );
             """)
             conn.commit()
         return exists
@@ -54,9 +63,9 @@ def check_and_create_table(conn, table_name):
 # Cargar los datos de la base de datos de origen (datatuning)
 def load_data_from_source():
     engine = create_db_engine(DB_DEST)
-    query = f'SELECT * FROM "{DB_DEST["TABLE"]}";'  # Usar comillas dobles si es sensible a mayúsculas
+    query = f'SELECT * FROM "{DB_DEST["TABLE"]}";'
     df = pd.read_sql(text(query), engine)
-    engine.dispose()  # Cerrar la conexión
+    engine.dispose()
     return df
 
 # Insertar los datos en la base de datos de destino (pred)
@@ -123,7 +132,8 @@ def main(pickle_dir):
     update_predictions_and_ratios(pickle_dir)
 
 # Directorio donde están los pickles
-pickle_dir = r"resultado"
+pickle_dir = r"dockerfiles\8.App_streamlit\models"
 
 # Ejecutar el proceso completo
-main(pickle_dir)
+if __name__ == "__main__":
+    main(pickle_dir)
