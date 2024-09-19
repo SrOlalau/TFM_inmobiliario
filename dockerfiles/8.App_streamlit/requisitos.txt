@@ -134,3 +134,4 @@ ydata-profiling==4.7.0
 zipp==3.20.0
 optuna==3.6.1
 optuna-integration==4.0.0
+joblib
