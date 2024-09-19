@@ -48,3 +48,8 @@ A continuación se describe la estructura del proyecto y la funcionalidad de cad
 
 ## Requisitos
 Python 3.12 o mayor
+
+
+## Ejecución de procesos.
+Ejecutando main.py se consolidan y transfomran todos los datos, luego se entrena el modelo.
+Activando el entorno virtual y ejecutando `python -m streamlit run app/0_Inicio.py`
