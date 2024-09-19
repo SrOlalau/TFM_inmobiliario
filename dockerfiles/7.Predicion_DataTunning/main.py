@@ -24,6 +24,9 @@ DB_PRED = {
     "TABLE": "datos_finales_con_prediciones"
 }
 
+# Directorio donde están los pickles
+PICKLE_DIR = "/resultados"
+
 # Crear la URL de conexión para SQLAlchemy
 def create_db_engine(db_config):
     engine_url = f"postgresql://{db_config['USER']}:{db_config['PASSWORD']}@{db_config['HOST']}:{db_config['PORT']}/{db_config['NAME']}"
@@ -77,21 +80,27 @@ def insert_data_to_pred(df):
     conn.close()
 
 # Cargar modelos desde archivos pickle
-def load_models(pickle_dir):
-    with open(os.path.join(pickle_dir, 'random_forest_pipeline_alquiler_venta_venta.pkl'), 'rb') as f:
+def load_models():
+    venta_model_path = os.path.join(PICKLE_DIR, 'random_forest_pipeline_alquiler_venta_venta.pkl')
+    alquiler_model_path = os.path.join(PICKLE_DIR, 'random_forest_pipeline_alquiler_venta_alquiler.pkl')
+    
+    if not os.path.exists(venta_model_path) or not os.path.exists(alquiler_model_path):
+        raise FileNotFoundError(f"Los archivos de modelo no se encuentran en {PICKLE_DIR}")
+    
+    with open(venta_model_path, 'rb') as f:
         venta_model = pickle.load(f)
     
-    with open(os.path.join(pickle_dir, 'random_forest_pipeline_alquiler_venta_alquiler.pkl'), 'rb') as f:
+    with open(alquiler_model_path, 'rb') as f:
         alquiler_model = pickle.load(f)
     
     return venta_model, alquiler_model
 
 # Actualizar predicciones y ratio en la base de datos pred
-def update_predictions_and_ratios(pickle_dir):
+def update_predictions_and_ratios():
     engine = create_db_engine(DB_PRED)
     conn = engine.raw_connection()
     
-    venta_model, alquiler_model = load_models(pickle_dir)
+    venta_model, alquiler_model = load_models()
     
     # Traer los datos de la tabla pred
     df_pred = pd.read_sql(f"SELECT * FROM {DB_PRED['TABLE']};", engine)
@@ -118,7 +127,7 @@ def update_predictions_and_ratios(pickle_dir):
     conn.close()
 
 # Función principal que ejecuta todo el flujo
-def main(pickle_dir):
+def main():
     # Paso 1: Conectarse a la base de datos 'pred' y comprobar/crear tabla
     engine_pred = create_db_engine(DB_PRED)
     conn_pred = engine_pred.raw_connection()
@@ -129,11 +138,8 @@ def main(pickle_dir):
     insert_data_to_pred(df_source)
 
     # Paso 3: Cargar los modelos y realizar las predicciones
-    update_predictions_and_ratios(pickle_dir)
-
-# Directorio donde están los pickles
-pickle_dir = r"dockerfiles\8.App_streamlit\models"
+    update_predictions_and_ratios()
 
 # Ejecutar el proceso completo
 if __name__ == "__main__":
-    main(pickle_dir)
+    main()
