@@ -9,7 +9,7 @@ def render_about_us():
          "github": "https://github.com/Manuelcastro97", "linkedin": "https://www.linkedin.com/in/manuelcastro97"},
         {"name": "Valentín Catalin Olalau", "profession": "S&OP | Demand Planner | Data Analyst",
          "github": "https://github.com/SrOlalau", "linkedin": "https://www.linkedin.com/in/valent%C3%ADn-catal%C3%ADn-olalau/"},
-        {"name": "Iván Camilo Cortés Gómez", "profession": "Data Scientist",
+        {"name": "Camilo Cortés Gómez", "profession": "Data Scientist",
          "github": "https://github.com/cvmilo0", "linkedin": "https://www.linkedin.com/in/camilo-cortes-gomez"},
         {"name": "Diego Gloria Salamanca", "profession": "Administrador Financiero | Data Scientist",
          "github": "https://github.com/Gloriuss", "linkedin": "https://www.linkedin.com/in/diego-gloria-salamanca/"},

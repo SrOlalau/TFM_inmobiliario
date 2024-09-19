@@ -1,9 +1,11 @@
 import pickle
+import streamlit as st
 
+@st.cache_resource
 def cargar_modelo(path):
     """
     Carga el modelo y las características desde un archivo pickle.
-
+    
     Args:
     path (str): La ruta del archivo pickle.
 

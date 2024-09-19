@@ -15,6 +15,8 @@ from pyproj import Transformer
 import branca.colormap as bcm
 from sqlalchemy import create_engine, text
 
+st.set_page_config(page_title="Mapa de Calor de Precios", page_icon="🌍", layout="wide")
+
 # Definir las rutas de los modelos
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Obtiene el directorio base del script actual
 MODEL_DIR = os.path.join(BASE_DIR, '..', 'models')
@@ -35,7 +37,7 @@ pipeline_venta, features_venta = cargar_modelo(MODEL_VENTA_PATH)
 
 
 # Configuración de la página en Streamlit
-st.set_page_config(page_title="Mapa de Calor de Precios", page_icon="🌍", layout="wide")
+
 set_assets()
 st.title('Mapa de Calor de Estimaciones de Precios en España')
 
@@ -64,13 +66,7 @@ def cargar_datos_filtrados(selected_ccaa):
     df = df.dropna(subset=['latitude', 'longitude'])
     df = df.drop_duplicates(subset=['latitude', 'longitude'], keep='first')
 
-    # Calcular la distancia desde el centro y mantener los puntos cercanos al centro
-    center_lat = ccaa_dict[selected_ccaa]['center_lat']
-    center_lon = ccaa_dict[selected_ccaa]['center_lon']
-    df['distance_from_center'] = np.sqrt((df['latitude'] - center_lat) ** 2 + (df['longitude'] - center_lon) ** 2)
-
     return df
-
 
 def preparar_entradas_para_modelo(df, mt2=50, habitaciones=1, banios=1):
     """

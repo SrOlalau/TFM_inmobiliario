@@ -9,7 +9,7 @@ from utils.app_poi_calculator import POICalculator
 from sqlalchemy import create_engine, text
 import psycopg2
 
-
+st.set_page_config(page_title="Estima precios", page_icon="🖥️", layout="wide")
 # Definir las rutas de los modelos
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))  # Obtiene el directorio base del script actual
 MODEL_DIR = os.path.join(BASE_DIR, '..', 'models')
@@ -254,7 +254,7 @@ def generar_alternativas():
 
 
 if __name__ == "__main__":
-    st.set_page_config(page_title="Estima precios", page_icon="🖥️", layout="wide")
+
     set_assets()
     # Crear interfaz en Streamlit
     st.title('Estimación de Modelos de Ventas y Alquiler')
