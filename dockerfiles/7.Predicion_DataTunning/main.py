@@ -1,10 +1,26 @@
-import psycopg2
-import pandas as pd
-import pickle
 import os
-from sqlalchemy import create_engine, text
+import pickle
+import time
+import warnings
+from datetime import datetime
 
-# Configuración de la base de datos de origen (datatuning)
+import numpy as np
+import pandas as pd
+from sqlalchemy import create_engine, text
+from sklearn.compose import ColumnTransformer
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.impute import SimpleImputer
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+from sklearn.model_selection import train_test_split, cross_val_score
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import StandardScaler, OneHotEncoder
+import optuna
+import gc
+import requests
+
+warnings.filterwarnings('ignore')
+
+# Configuración de la base de datos
 DB_DEST = {
     "NAME": "datatuning",
     "USER": "datatuning",
@@ -14,7 +30,6 @@ DB_DEST = {
     "TABLE": "Datos_finales"
 }
 
-# Configuración de la base de datos de destino (pred)
 DB_PRED = {
     "NAME": "pred",
     "USER": "pred",
@@ -24,62 +39,39 @@ DB_PRED = {
     "TABLE": "datos_finales_con_prediciones"
 }
 
+# Configuración de Telegram
+TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
+TELEGRAM_CHAT_ID = '297175679'
+
 # Directorio donde están los pickles
 PICKLE_DIR = "/resultados"
 
-# Crear la URL de conexión para SQLAlchemy
 def create_db_engine(db_config):
     engine_url = f"postgresql://{db_config['USER']}:{db_config['PASSWORD']}@{db_config['HOST']}:{db_config['PORT']}/{db_config['NAME']}"
     engine = create_engine(engine_url)
     return engine
 
-# Comprobar si la tabla existe, si no, crearla
-def check_and_create_table(conn, table_name):
-    with conn.cursor() as cur:
-        cur.execute(f"""
-            SELECT EXISTS (
-                SELECT FROM information_schema.tables 
-                WHERE table_name = '{table_name}'
-            );
-        """)
-        exists = cur.fetchone()[0]
-        
-        if not exists:
-            # Obtener la estructura de la tabla de origen
-            engine_source = create_db_engine(DB_DEST)
-            with engine_source.connect() as conn_source:
-                result = conn_source.execute(text(f"SELECT * FROM \"{DB_DEST['TABLE']}\" LIMIT 0"))
-                column_names = result.keys()
-            
-            # Crear la tabla en la base de datos de destino
-            columns = ', '.join([f"\"{col}\" VARCHAR" for col in column_names])
-            cur.execute(f"""
-                CREATE TABLE {table_name} (
-                    {columns},
-                    predicion DOUBLE PRECISION,
-                    ratio DOUBLE PRECISION
-                );
-            """)
-            conn.commit()
-        return exists
+def send_telegram_message(message):
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    payload = {
+        'chat_id': TELEGRAM_CHAT_ID,
+        'text': message
+    }
+    try:
+        response = requests.post(url, data=payload)
+        response.raise_for_status()
+        print("Mensaje enviado a Telegram.")
+    except Exception as e:
+        print(f"Error al enviar mensaje a Telegram: {str(e)}")
 
-# Cargar los datos de la base de datos de origen (datatuning)
-def load_data_from_source():
-    engine = create_db_engine(DB_DEST)
-    query = f'SELECT * FROM "{DB_DEST["TABLE"]}";'
-    df = pd.read_sql(text(query), engine)
-    engine.dispose()
+def load_data_from_postgres():
+    connection_string = f"postgresql://{DB_DEST['USER']}:{DB_DEST['PASSWORD']}@{DB_DEST['HOST']}:{DB_DEST['PORT']}/{DB_DEST['NAME']}"
+    engine = create_engine(connection_string)
+    query = text(f'SELECT * FROM "{DB_DEST["TABLE"]}"')
+    df = pd.read_sql(query, engine)
+    print(f"Tamaño del DataFrame cargado: {df.shape}")
     return df
 
-# Insertar los datos en la base de datos de destino (pred)
-def insert_data_to_pred(df):
-    engine = create_db_engine(DB_PRED)
-    conn = engine.raw_connection()
-    df.to_sql(DB_PRED['TABLE'], engine, if_exists='append', index=False)
-    conn.commit()
-    conn.close()
-
-# Cargar modelos desde archivos pickle
 def load_models():
     venta_model_path = os.path.join(PICKLE_DIR, 'random_forest_pipeline_alquiler_venta_venta.pickle')
     alquiler_model_path = os.path.join(PICKLE_DIR, 'random_forest_pipeline_alquiler_venta_alquiler.pickle')
@@ -98,69 +90,95 @@ def load_models():
         raise FileNotFoundError(f"El archivo de modelo de alquiler no se encuentra: {alquiler_model_path}")
     
     with open(venta_model_path, 'rb') as f:
-        venta_model = pickle.load(f)
+        venta_model_dict = pickle.load(f)
     
     with open(alquiler_model_path, 'rb') as f:
-        alquiler_model = pickle.load(f)
+        alquiler_model_dict = pickle.load(f)
     
-    return venta_model, alquiler_model
+    print("Estructura del modelo de venta:", type(venta_model_dict))
+    print("Estructura del modelo de alquiler:", type(alquiler_model_dict))
+    
+    return venta_model_dict, alquiler_model_dict
 
-# Actualizar predicciones y ratio en la base de datos pred
+def predict_with_model(model_dict, precio):
+    if isinstance(model_dict, dict) and 'pipeline' in model_dict:
+        pipeline = model_dict['pipeline']
+        features = model_dict['features']
+        
+        # Crear un DataFrame con las características necesarias
+        input_data = pd.DataFrame([[precio]], columns=['precio'])
+        
+        # Añadir columnas faltantes con valores por defecto
+        for col, info in features['options_range'].items():
+            if col not in input_data.columns:
+                input_data[col] = info['default']
+        
+        # Asegurarse de que el DataFrame tiene todas las columnas necesarias en el orden correcto
+        input_data = input_data[features['colums']]
+        
+        return pipeline.predict(input_data)[0]
+    else:
+        raise ValueError("El modelo no tiene la estructura esperada")
+
 def update_predictions_and_ratios():
     engine = create_db_engine(DB_PRED)
     conn = engine.raw_connection()
     
-    venta_model, alquiler_model = load_models()
+    venta_model_dict, alquiler_model_dict = load_models()
     
     # Traer los datos de la tabla pred
     df_pred = pd.read_sql(f"SELECT * FROM {DB_PRED['TABLE']};", engine)
 
     for index, row in df_pred.iterrows():
-        # Seleccionar el modelo adecuado en base al valor de alquiler_venta
-        if row['alquiler_venta'] == 'venta':
-            pred = venta_model.predict([[row['precio']]])[0]
-        else:
-            pred = alquiler_model.predict([[row['precio']]])[0]
-        
-        # Calcular el ratio
-        ratio = pred / row['precio'] if row['precio'] != 0 else 0
+        try:
+            # Seleccionar el modelo adecuado en base al valor de alquiler_venta
+            if row['alquiler_venta'] == 'venta':
+                pred = predict_with_model(venta_model_dict, row['precio'])
+            else:
+                pred = predict_with_model(alquiler_model_dict, row['precio'])
+            
+            # Calcular el ratio
+            ratio = pred / row['precio'] if row['precio'] != 0 else 0
 
-        # Actualizar en la base de datos
-        with conn.cursor() as cur:
-            cur.execute(f"""
-                UPDATE {DB_PRED['TABLE']}
-                SET predicion = %s, ratio = %s
-                WHERE id = %s;
-            """, (pred, ratio, row['id']))
-        conn.commit()
+            # Actualizar en la base de datos
+            with conn.cursor() as cur:
+                cur.execute(f"""
+                    UPDATE {DB_PRED['TABLE']}
+                    SET predicion = %s, ratio = %s
+                    WHERE id = %s;
+                """, (pred, ratio, row['id']))
+            conn.commit()
+        except Exception as e:
+            print(f"Error procesando fila {index}: {str(e)}")
+            print("Datos de la fila:", row)
+            continue
     
     conn.close()
 
-# Función principal que ejecuta todo el flujo
 def main():
-    print("Iniciando el proceso principal...")
-    
-    # Paso 1: Conectarse a la base de datos 'pred' y comprobar/crear tabla
-    print("Paso 1: Conectando a la base de datos 'pred' y comprobando/creando tabla...")
-    engine_pred = create_db_engine(DB_PRED)
-    conn_pred = engine_pred.raw_connection()
-    table_existed = check_and_create_table(conn_pred, DB_PRED["TABLE"])
-    print(f"La tabla {'ya existía' if table_existed else 'ha sido creada'}")
-    
-    # Paso 2: Cargar los datos desde 'datatuning' y moverlos a 'pred'
-    print("Paso 2: Cargando datos desde 'datatuning' y moviéndolos a 'pred'...")
-    df_source = load_data_from_source()
-    print(f"Cargados {len(df_source)} registros de 'datatuning'")
-    insert_data_to_pred(df_source)
-    print("Datos insertados en 'pred'")
+    start_time = time.time()
+    print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Proceso iniciado...")
 
-    # Paso 3: Cargar los modelos y realizar las predicciones
-    print("Paso 3: Cargando modelos y realizando predicciones...")
-    update_predictions_and_ratios()
-    print("Predicciones actualizadas")
+    # Enviar mensaje de inicio a Telegram
+    send_telegram_message("Iniciando proceso de predicciones")
 
-    print("Proceso completado con éxito")
+    try:
+        # Actualizar predicciones y ratios
+        update_predictions_and_ratios()
 
-# Ejecutar el proceso completo
-if __name__ == "__main__":
+        end_time = time.time()
+        elapsed_time = end_time - start_time
+        hours, rem = divmod(elapsed_time, 3600)
+        minutes, seconds = divmod(rem, 60)
+        
+        completion_message = f"Proceso completado. Tiempo total de ejecución: {int(hours)}h {int(minutes)}m {int(seconds)}s"
+        print(completion_message)
+        send_telegram_message(completion_message)
+
+    except Exception as e:
+        error_message = f"Error en el proceso: {str(e)}"
+        print(error_message)
+        send_telegram_message(error_message)
+
+if __name__ == '__main__':
     main()
