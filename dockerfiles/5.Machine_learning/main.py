@@ -340,7 +340,7 @@ def optimize_hyperparameters(X, y, preprocessor):
     study = optuna.create_study(direction='minimize')
 
     # Optimizar los hiperparámetros con el preprocesador
-    study.optimize(lambda trial: objective(trial, X, y, preprocessor), n_trials=10, show_progress_bar=True)
+    study.optimize(lambda trial: objective(trial, X, y, preprocessor), n_trials=2, show_progress_bar=True)
 
     print("Mejores hiperparámetros encontrados:")
     print(study.best_params)
