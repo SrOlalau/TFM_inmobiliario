@@ -81,11 +81,21 @@ def insert_data_to_pred(df):
 
 # Cargar modelos desde archivos pickle
 def load_models():
-    venta_model_path = os.path.join(PICKLE_DIR, 'random_forest_pipeline_alquiler_venta_venta.pkl')
-    alquiler_model_path = os.path.join(PICKLE_DIR, 'random_forest_pipeline_alquiler_venta_alquiler.pkl')
+    venta_model_path = os.path.join(PICKLE_DIR, 'random_forest_pipeline_alquiler_venta_venta.pickle')
+    alquiler_model_path = os.path.join(PICKLE_DIR, 'random_forest_pipeline_alquiler_venta_alquiler.pickle')
     
-    if not os.path.exists(venta_model_path) or not os.path.exists(alquiler_model_path):
-        raise FileNotFoundError(f"Los archivos de modelo no se encuentran en {PICKLE_DIR}")
+    print(f"Contenido de {PICKLE_DIR}:")
+    print(os.listdir(PICKLE_DIR))
+    
+    print(f"Buscando modelos en:")
+    print(f"  - {venta_model_path}")
+    print(f"  - {alquiler_model_path}")
+    
+    if not os.path.exists(venta_model_path):
+        raise FileNotFoundError(f"El archivo de modelo de venta no se encuentra: {venta_model_path}")
+    
+    if not os.path.exists(alquiler_model_path):
+        raise FileNotFoundError(f"El archivo de modelo de alquiler no se encuentra: {alquiler_model_path}")
     
     with open(venta_model_path, 'rb') as f:
         venta_model = pickle.load(f)
@@ -128,17 +138,28 @@ def update_predictions_and_ratios():
 
 # Función principal que ejecuta todo el flujo
 def main():
+    print("Iniciando el proceso principal...")
+    
     # Paso 1: Conectarse a la base de datos 'pred' y comprobar/crear tabla
+    print("Paso 1: Conectando a la base de datos 'pred' y comprobando/creando tabla...")
     engine_pred = create_db_engine(DB_PRED)
     conn_pred = engine_pred.raw_connection()
-    check_and_create_table(conn_pred, DB_PRED["TABLE"])
+    table_existed = check_and_create_table(conn_pred, DB_PRED["TABLE"])
+    print(f"La tabla {'ya existía' if table_existed else 'ha sido creada'}")
     
     # Paso 2: Cargar los datos desde 'datatuning' y moverlos a 'pred'
+    print("Paso 2: Cargando datos desde 'datatuning' y moviéndolos a 'pred'...")
     df_source = load_data_from_source()
+    print(f"Cargados {len(df_source)} registros de 'datatuning'")
     insert_data_to_pred(df_source)
+    print("Datos insertados en 'pred'")
 
     # Paso 3: Cargar los modelos y realizar las predicciones
+    print("Paso 3: Cargando modelos y realizando predicciones...")
     update_predictions_and_ratios()
+    print("Predicciones actualizadas")
+
+    print("Proceso completado con éxito")
 
 # Ejecutar el proceso completo
 if __name__ == "__main__":
