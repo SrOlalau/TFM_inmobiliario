@@ -1,3 +1,171 @@
+# Real Estate Analysis Project with Machine Learning
+
+## 1. Introduction
+
+This project is part of our **Master’s Final Project (TFM)** for the **Master in Data Science, Big Data & Business Analytics 2023-2024** program. Our team has developed a system that scrapes data from multiple real estate websites (for sale/rent), cleans and processes it, and applies Machine Learning techniques to generate predictions based on the collected data. Additionally, we have developed a web platform using **Streamlit** to visualize and analyze the results interactively.
+
+The project is fully replicable and scalable thanks to its modular structure, based on Docker containers, allowing for independent management of each process phase. This makes it easy to integrate new data or modify any part of the pipeline efficiently.
+
+### Team Members:
+
+Below is the development team that has worked on this project, listed alphabetically:
+
+- **Manuel Castro Villegas**   
+  [GitHub](https://github.com/Manuelcastro97) | [LinkedIn](https://www.linkedin.com/in/manuelcastro97/)
+
+- **Iván Camilo Cortés Gómez**  
+  [GitHub](https://github.com/cvmilo0) | [LinkedIn](https://www.linkedin.com/in/camilo-cortes-gomez/)
+
+- **Diego Gloria Salamanca**  
+  [GitHub](https://github.com/Gloriuss) | [LinkedIn](https://www.linkedin.com/in/diego-gloria-salamanca/)
+
+- **Valentín Catalin Olalau**  
+  [GitHub](https://github.com/SrOlalau) | [LinkedIn](https://www.linkedin.com/in/valent%C3%ADn-catal%C3%ADn-olalau/)
+
+- **Álvaro Oñoro Moya**  
+  [GitHub](https://github.com/Ixelar) | [LinkedIn](https://linkedin.com/in/miembro5)
+
+- **Alonso Valdés González**  
+  [GitHub](https://github.com/Alonsomar) | [LinkedIn](https://www.linkedin.com/in/alonso-vald%C3%A9s-gonz%C3%A1lez-b44535135/)
+
+## 2. Requirements
+
+The project requires the use of Docker to facilitate the execution of various components, including data scraping, processing, and modeling. Each phase runs in a separate Docker container, and PostgreSQL databases store the processed data.
+
+### System Requirements:
+- **Docker** (latest version)
+- **Docker Compose**
+
+### PostgreSQL Configuration
+
+Each step in the process has its own database, enabling a modular workflow and improved data control. The PostgreSQL container needs to be initialized, and project scripts will automatically create the required tables if they do not exist.
+
+- **Database for property scraping:**
+  - DB_NAME: `scraping_pisos`
+  - DB_USER: `pisos`
+  - DB_PASSWORD: `pisos`
+  - DB_HOST: `10.1.2.2`
+  - DB_PORT: `5437`
+  - DB_Table_name: `scraping_pisos_tabla`
+
+- **Database for Trovit scraping:**
+  - DB_NAME: `scraping_trovit`
+  - DB_USER: `trovit`
+  - DB_PASSWORD: `trovit`
+  - DB_HOST: `10.1.2.2`
+  - DB_PORT: `5434`
+  - DB_Table_name: `scraping_trovit_tabla`
+
+- **Database for OpenStreetMaps scraping:**
+  - DB_NAME: `scraping_openstreetmaps`
+  - DB_USER: `POI`
+  - DB_PASSWORD: `POI`
+  - DB_HOST: `10.1.2.2`
+  - DB_PORT: `5438`
+  - DB_Table_name: `points_of_interest`
+
+- **Database for data munging:**
+  - DB_NAME: `datos_limpios`
+  - DB_USER: `datos_limpios`
+  - DB_PASSWORD: `datos_limpios`
+  - DB_HOST: `10.1.2.2`
+  - DB_PORT: `5439`
+  - DB_Table_name: `consolidated_data`
+
+- **Database for adding geolocation:**
+  - DB_NAME: `geoloc`
+  - DB_USER: `geoloc`
+  - DB_PASSWORD: `geoloc`
+  - DB_HOST: `10.1.2.2`
+  - DB_PORT: `5441`
+  - DB_Table_name: `datos_limpios_con_geo`
+
+- **Database for feature engineering:**
+  - DB_NAME: `geo_y_poi`
+  - DB_USER: `geo_y_poi`
+  - DB_PASSWORD: `geo_y_poi`
+  - DB_HOST: `10.1.2.2`
+  - DB_PORT: `5442`
+  - DB_Table_name: `datos_limpios_con_geo_y_poi`
+
+- **Database for data tuning and Streamlit application:**
+  - DB_NAME: `datatuning`
+  - DB_USER: `datatuning`
+  - DB_PASSWORD: `datatuning`
+  - DB_HOST: `10.1.2.2`
+  - DB_PORT: `5444`
+  - DB_Table_name: `Datos_finales`
+
+## 3. Data Flow
+
+The data flow is carefully structured into multiple stages, with each phase managed via an independent Docker container connected to its corresponding database. This ensures a modular and efficient processing pipeline. All scripts and Dockerfiles are organized in the `dockerfiles` folder, while `docker-compose` files required for execution are in the `Dockers_compose` folder.
+
+### 3.1 Data Scraping
+
+The first step involves scraping property listing websites (for rent and sale). Scripts are located in the `0.1_Scraping_pisos` and `0.2_Scraping_trovit` folders and run inside Docker containers, storing data in the `scraping_pisos` and `scraping_trovit` databases.
+
+- **Docker Compose path for Pisos:** `Dockers_compose/0.1_Scraping_pisos.yaml`
+- **Docker Compose path for Trovit:** `Dockers_compose/0.2_Scraping_trovit.yaml`
+
+### 3.2 Points of Interest (POI) Scraping
+
+This step collects geographic data about points of interest (POI) near the properties, such as schools, hospitals, and public transport, using OpenStreetMaps. Data is stored in the `scraping_openstreetmaps` database.
+
+- **Docker Compose path:** `Dockers_compose/0.3_Scraping_OpenStreetMaps.yaml`
+
+### 3.3 Data Cleaning and Processing (Data Munging)
+
+This stage processes and cleans the collected data by removing duplicates, correcting values, and preparing the dataset for analysis. The results are stored in the `datos_limpios` database.
+
+- **Docker Compose path:** `Dockers_compose/1.Data_munging.yaml`
+
+### 3.4 Adding Geolocation
+
+Geolocation data is added to the properties for enhanced analysis. This step runs in a Docker container and stores data in the `geoloc` database.
+
+- **Docker Compose path:** `Dockers_compose/2.Añadir_geo_localizaciones.yaml`
+
+### 3.5 Feature Engineering
+
+In this step, geolocation and POI data are integrated to enrich the dataset with additional variables describing proximity to key locations. The enriched data is stored in the `geo_y_poi` database.
+
+- **Docker Compose path:** `Dockers_compose/3.Ingenieria_de_variables.yaml`
+
+### 3.6 Data Tuning
+
+Selected variables are adjusted and optimized to improve the Machine Learning model. The results are stored in the `datatuning` database.
+
+- **Docker Compose path:** `Dockers_compose/4.Data_tunning.yaml`
+
+### 3.7 Machine Learning
+
+A **Random Forest** model is applied to predict property prices based on the optimized variables. The trained model is stored in `.pickle` format for use in the Streamlit application.
+
+- **Docker Compose path:** `Dockers_compose/5.Machine_learning.yaml`
+
+### 3.8 Streamlit Application
+
+The interactive visualization of results is conducted through a web platform developed in **Streamlit**, allowing users to explore the processed data and model predictions.
+
+- **Docker Compose path:** `Dockers_compose/6.App_streamlit.yaml`
+
+## 4. Conclusions
+
+This project demonstrates how to build a complete real estate data pipeline, from scraping to Machine Learning, in a modular and scalable way using Docker containers. The stage-based separation allows for detailed control over each step, making replication and adaptation to new requirements easier.
+
+The Streamlit platform enables quick and efficient data interaction, providing valuable insights. If you're interested in replicating this project, follow the instructions and execute the scripts in the proper order.
+
+We hope you enjoy the project!
+
+Visit our platform at:
+
+[Access our website](http://preciopiso.com/)
+
+
+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 # Proyecto de Análisis Inmobiliario con Machine Learning
 
 ## 1. Introducción
