@@ -10,8 +10,8 @@ from psycopg2 import sql
 from fuzzywuzzy import fuzz
 
 # Configuración de Telegram
-TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
-TELEGRAM_CHAT_ID = '297175679'
+TELEGRAM_BOT_TOKEN = ''
+TELEGRAM_CHAT_ID = ''
 
 def send_telegram_message(message):
     """
