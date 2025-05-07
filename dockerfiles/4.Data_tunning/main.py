@@ -24,8 +24,8 @@ DB_DEST = {
 }
 
 # Configuración de Telegram
-TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
-TELEGRAM_CHAT_ID = '297175679'
+TELEGRAM_BOT_TOKEN = ':'
+TELEGRAM_CHAT_ID = ''
 
 def send_telegram_message(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
