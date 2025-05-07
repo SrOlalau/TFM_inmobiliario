@@ -7,8 +7,8 @@ import time
 import random
 
 # Configura tu token de bot y el ID de chat
-TELEGRAM_BOT_TOKEN = '6916058231:AAEOmgGX0k427p5mbe6UFmxAL1MpTXYCYTs'
-TELEGRAM_CHAT_ID = '297175679'
+TELEGRAM_BOT_TOKEN = ''
+TELEGRAM_CHAT_ID = ''
 
 # Variables de conexión a la base de datos
 DB_NAME = "scraping_openstreetmaps"
